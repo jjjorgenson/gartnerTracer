@@ -1,5 +1,5 @@
 /**
- * Unit tests for manifest resolution: precedence, dedupe, rank, max docs (trd3gpt §6-7)
+ * Unit tests for manifest resolution: precedence, dedupe, rank, max docs (TRD §4.1)
  */
 const { describe, it } = require('node:test');
 const assert = require('node:assert');

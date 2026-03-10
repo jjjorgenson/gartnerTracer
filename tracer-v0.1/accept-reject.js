@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - accept / reject suggestion (trd3gpt §13)
+ * TRACER v0.1 - accept / reject suggestion (TRD §6 acceptance evidence)
  * tracer accept <artifact> → mark accepted, update doc-status to CURRENT, apply content to doc files
  * tracer reject <artifact> → mark rejected, doc-status stays PENDING
  */

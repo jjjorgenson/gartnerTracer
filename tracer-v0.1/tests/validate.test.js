@@ -1,5 +1,5 @@
 /**
- * Unit tests for validateDocUpdate (trd3gpt §9 hard-reject rules)
+ * Unit tests for validateDocUpdate (TRD §4.2 hard-reject rules)
  */
 const { describe, it } = require('node:test');
 const assert = require('node:assert');

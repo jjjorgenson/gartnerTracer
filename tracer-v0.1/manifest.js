@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Manifest resolver (TRD-v2 §3.4, trd3gpt §6-7)
+ * TRACER v0.1 - Manifest resolver (TRD §3.4, §4.1)
  * Supports both legacy (path + docs) and TRD (code.paths + docs[].path) formats.
  * Precedence: exact path > narrower glob > later entry. Max docs per run with warnings.
  */

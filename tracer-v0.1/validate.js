@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Output validation (trd3gpt §9)
+ * TRACER v0.1 - Output validation (TRD §4.2)
  * Hard-reject conditions; rejected outputs are recorded in spans-rejected.jsonl.
  */
 

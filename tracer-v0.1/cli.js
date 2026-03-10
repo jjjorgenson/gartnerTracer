@@ -148,7 +148,7 @@ async function runLifecycle() {
     inputTokens = aiData.usage.input_tokens;
     outputTokens = aiData.usage.output_tokens;
 
-    // Step 9: Validate generated output (trd3gpt §9 hard-reject)
+    // Step 9: Validate generated output (TRD §4.2 hard-reject)
     const validation = validateDocUpdate(docContent, generatedMarkdown);
     if (!validation.valid) {
       const tracerDir = getTracerDir();

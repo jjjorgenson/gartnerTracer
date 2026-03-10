@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Anthropic API with retries (TRD-v2 §7.1)
+ * TRACER v0.1 - Anthropic API with retries (TRD §7.1)
  * 3 retries with exponential backoff (1s, 4s, 16s) on 429, 5xx, timeout.
  */
 
