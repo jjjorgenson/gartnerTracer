@@ -116,18 +116,31 @@ async function runLifecycle() {
     }
 
     // Step 5: Resolve manifest mappings (precedence, dedupe, rank, max 10)
-    console.log("🗺️ Resolving manifest mappings...");
-    const { docPaths: matchedDocs, warnings, strategyByDoc } = resolveTargets(changedFiles, manifest);
+    console.log("\ud83d\uddfa\ufe0f Resolving manifest mappings...");
+    const { docPaths: matchedDocs, warnings, strategyByDoc, docTypeByDoc } = resolveTargets(changedFiles, manifest);
     if (matchedDocs.length === 0) {
-      console.log("⏭️ No documentation targets matched. Exiting gracefully.");
+      console.log("\u23ed\ufe0f No documentation targets matched. Exiting gracefully.");
       process.exit(9);
     }
-    warnings.forEach(w => console.warn(`⚠️ ${w}`));
-    console.log(`🎯 Matched Documentation Targets:`, matchedDocs);
+    warnings.forEach(w => console.warn(`\u26a0\ufe0f ${w}`));
+    console.log(`\ud83c\udfaf Matched Documentation Targets:`, matchedDocs);
 
-    // Step 6: Load affected documentation (process first doc for v0.1; loop later)
+    // Step 6: Load affected documentation (process first doc; route by type)
     const docPath = matchedDocs[0];
-    const docContent = fs.readFileSync(docPath, 'utf8');
+    const docType = docTypeByDoc.get(docPath) || 'repo';
+    let docContent;
+
+    if (docType === 'github-wiki') {
+      const { GitHubWikiAdapter } = require('./adapters/github-wiki');
+      const wikiAdapter = new GitHubWikiAdapter();
+      docContent = wikiAdapter.read(docPath);
+      if (docContent === null) {
+        console.log(`\ud83d\udcdd [Wiki] Page "${docPath}" doesn't exist yet, starting fresh.`);
+        docContent = `# ${docPath.replace(/-/g, ' ')}\n\n`;
+      }
+    } else {
+      docContent = fs.readFileSync(docPath, 'utf8');
+    }
 
     // Step 7: Construct AI prompts
     const systemPrompt = `You are Tracer, an AI documentation agent. Read the code diff and existing doc, and output ONLY the updated markdown. Keep the tone technical and concise.`;
@@ -167,8 +180,14 @@ async function runLifecycle() {
     } else {
       // Steps 10, 11, & 12: Delivery and Status Update
       const strategy = strategyByDoc.get(docPath) || 'suggest';
-      console.log(`📦 Packaging and delivering suggestion (strategy: ${strategy})...`);
-      await deliverSuggestion(matchedDocs, generatedMarkdown, strategy);
+      console.log(`\ud83d\udce6 Packaging and delivering suggestion (strategy: ${strategy})...`);
+
+      const commitContext = {
+        commitHash: process.env.GITHUB_SHA || '',
+        prNumber: process.env.PR_NUMBER || '',
+        repo: process.env.GITHUB_REPOSITORY || '',
+      };
+      await deliverSuggestion(matchedDocs, generatedMarkdown, strategy, { docTypeByDoc, commitContext });
     }
 
     // Step 13: Write logs
