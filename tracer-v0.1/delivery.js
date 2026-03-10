@@ -1,5 +1,6 @@
 /**
- * TRACER v0.1 - Delivery Adapter (suggest | pr-comment)
+ * TRACER v0.1 - Delivery Adapter (suggest | pr-comment | commit)
+ * The commit strategy routes github-wiki docs through the WikiAdapter.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -53,29 +54,90 @@ function updateDocStatus(matchedDocs, suggestionId) {
   console.log(`📝 [State] Updated doc-status.json (Marked ${matchedDocs.length} docs as PENDING)`);
 }
 
-async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, strategy = 'suggest') {
+/**
+ * Deliver wiki page update via the GitHubWikiAdapter (commit strategy).
+ * @param {string} pageSlug - wiki page slug (e.g. "API-Reference")
+ * @param {string} content  - markdown content
+ * @param {object} [context] - { commitHash, prNumber, repo }
+ * @returns {{ committed: boolean, pushed: boolean }}
+ */
+async function deliverToWiki(pageSlug, content, context = {}) {
+  const { GitHubWikiAdapter } = require('./adapters/github-wiki');
+  const adapter = new GitHubWikiAdapter({ repo: context.repo });
+
+  const parts = [`Tracer: updated ${pageSlug}`];
+  if (context.prNumber) parts.push(`PR #${context.prNumber}`);
+  if (context.commitHash) parts.push(`commit ${context.commitHash.slice(0, 7)}`);
+  const message = parts.length > 1
+    ? `${parts[0]} (${parts.slice(1).join(', ')})`
+    : parts[0];
+
+  try {
+    const result = adapter.write(pageSlug, content, message);
+    if (result.committed) {
+      console.log(`\u2705 [Delivery] Wiki page "${pageSlug}" committed${result.pushed ? ' and pushed' : ''}`);
+    } else {
+      console.log(`\u2139\ufe0f [Delivery] Wiki page "${pageSlug}" unchanged`);
+    }
+    return result;
+  } catch (err) {
+    console.warn(`\u26a0\ufe0f [Delivery] Wiki commit failed (${err.message}), falling back to suggest`);
+    throw err;
+  }
+}
+
+/**
+ * @param {string[]} matchedDocs
+ * @param {string} aiGeneratedMarkdown
+ * @param {string} [strategy='suggest']
+ * @param {object} [opts] - { docTypeByDoc: Map, commitContext: { commitHash, prNumber, repo } }
+ */
+async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, strategy = 'suggest', opts = {}) {
   const suggestionId = `update_${crypto.randomUUID()}`;
+  const { docTypeByDoc, commitContext } = opts;
+
+  // Commit strategy for github-wiki docs: push directly to wiki repo
+  if (strategy === 'commit' && docTypeByDoc) {
+    const wikiDocs = matchedDocs.filter(d => docTypeByDoc.get(d) === 'github-wiki');
+    const repoDocs = matchedDocs.filter(d => docTypeByDoc.get(d) !== 'github-wiki');
+
+    for (const pageSlug of wikiDocs) {
+      try {
+        await deliverToWiki(pageSlug, aiGeneratedMarkdown, commitContext || {});
+        updateDocStatus([`wiki:${pageSlug}`], suggestionId);
+      } catch {
+        writeSuggestArtifact([pageSlug], aiGeneratedMarkdown, suggestionId);
+        updateDocStatus([pageSlug], suggestionId);
+      }
+    }
+
+    if (repoDocs.length > 0) {
+      writeSuggestArtifact(repoDocs, aiGeneratedMarkdown, suggestionId);
+      updateDocStatus(repoDocs, suggestionId);
+    }
+    return;
+  }
 
   try {
     if (strategy === 'pr-comment' && process.env.GITHUB_TOKEN) {
       const body = `## Tracer: suggested doc update\n\nTargets: ${matchedDocs.join(', ')}\n\n<details>\n<summary>Suggested content</summary>\n\n\`\`\`markdown\n${aiGeneratedMarkdown}\n\`\`\`\n\n</details>`;
       const commentUrl = await postPrComment(body);
-      console.log(`✅ [Delivery] PR comment posted: ${commentUrl}`);
+      console.log(`\u2705 [Delivery] PR comment posted: ${commentUrl}`);
       writeSuggestArtifact(matchedDocs, aiGeneratedMarkdown, suggestionId);
       updateDocStatus(matchedDocs, suggestionId);
       return;
     }
   } catch (err) {
-    console.warn(`⚠️ [Delivery] pr-comment failed (${err.message}), falling back to suggest`);
+    console.warn(`\u26a0\ufe0f [Delivery] pr-comment failed (${err.message}), falling back to suggest`);
   }
 
   try {
     writeSuggestArtifact(matchedDocs, aiGeneratedMarkdown, suggestionId);
     updateDocStatus(matchedDocs, suggestionId);
   } catch (err) {
-    console.error(`💥 Delivery Failure: ${err.message}`);
+    console.error(`\ud83d\udca5 Delivery Failure: ${err.message}`);
     throw err;
   }
 }
 
-module.exports = { deliverSuggestion, getTracerDir };
+module.exports = { deliverSuggestion, deliverToWiki, getTracerDir };

@@ -46,10 +46,18 @@ function acceptSuggestion(artifactPath) {
   const { id, targets, content } = loadSuggestion(artifactPath);
 
   for (const docPath of targets) {
-    const fullPath = path.isAbsolute(docPath) ? docPath : path.join(process.cwd(), docPath);
-    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-    fs.writeFileSync(fullPath, content, 'utf8');
-    console.log(`✅ Applied to ${docPath}`);
+    if (isWikiTarget(docPath)) {
+      const pageSlug = docPath.startsWith('wiki:') ? docPath.slice(5) : docPath;
+      const { GitHubWikiAdapter } = require('./adapters/github-wiki');
+      const adapter = new GitHubWikiAdapter();
+      const result = adapter.write(pageSlug, content, `Tracer: accepted suggestion ${id}`);
+      console.log(`\u2705 Wiki page "${pageSlug}" ${result.pushed ? 'pushed' : 'committed locally'}`);
+    } else {
+      const fullPath = path.isAbsolute(docPath) ? docPath : path.join(process.cwd(), docPath);
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      fs.writeFileSync(fullPath, content, 'utf8');
+      console.log(`\u2705 Applied to ${docPath}`);
+    }
   }
 
   let statusData = { docs: {} };
@@ -58,7 +66,8 @@ function acceptSuggestion(artifactPath) {
   }
   const now = new Date().toISOString();
   for (const doc of targets) {
-    statusData.docs[doc] = {
+    const statusKey = isWikiTarget(doc) ? doc : doc;
+    statusData.docs[statusKey] = {
       status: 'CURRENT',
       lastSuggestionId: id,
       lastAcceptedAt: now,
@@ -66,7 +75,11 @@ function acceptSuggestion(artifactPath) {
     };
   }
   fs.writeFileSync(statusFile, JSON.stringify(statusData, null, 2), 'utf8');
-  console.log(`📝 doc-status.json updated: ${targets.length} doc(s) marked CURRENT`);
+  console.log(`\ud83d\udcdd doc-status.json updated: ${targets.length} doc(s) marked CURRENT`);
+}
+
+function isWikiTarget(docPath) {
+  return docPath.startsWith('wiki:') || docPath.match(/^[A-Z][\w-]+$/);
 }
 
 function rejectSuggestion(artifactPath) {

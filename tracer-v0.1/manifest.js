@@ -9,15 +9,22 @@ const { minimatch } = require('minimatch');
 const MAX_DOCS_PER_RUN = parseInt(process.env.TRACER_MAX_DOCS_PER_RUN || '10', 10);
 
 /**
- * Normalize a raw manifest mapping to { codePaths, docPaths, strategy }.
- * Legacy: { path, docs: string[] } -> codePaths [path], docPaths from docs.
- * TRD: { code: { paths }, docs: [{ path, type? }], strategy? } -> codePaths, docPaths from docs[].path.
+ * Normalize a raw manifest mapping to { codePaths, docs, strategy }.
+ * Legacy: { path, docs: string[] } -> codePaths [path], docs from docs.
+ * TRD: { code: { paths }, docs: [{ path, type? }], strategy? } -> codePaths, docs from docs[].
  */
 function normalizeMapping(entry, index) {
   const codePaths = entry.code?.paths ? [...entry.code.paths] : (entry.path ? [entry.path] : []);
-  const docPaths = (entry.docs || []).map(d => (typeof d === 'string' ? d : d.path)).filter(Boolean);
+
+  const rawDocs = entry.docs || [];
+  const docs = rawDocs.map(d => {
+    if (typeof d === 'string') return { path: d, type: 'repo' };
+    return { path: d.path, type: d.type || 'repo', metadata: d.metadata };
+  }).filter(d => d.path);
+
+  const docPaths = docs.map(d => d.path);
   const strategy = entry.strategy || 'suggest';
-  return { codePaths, docPaths, strategy, _index: index };
+  return { codePaths, docPaths, docs, strategy, _index: index };
 }
 
 /**
@@ -69,18 +76,20 @@ function resolveTargets(changedFiles, rawManifest) {
 
   const docToContributingFiles = new Map();
   const docToStrategy = new Map();
+  const docToType = new Map();
 
   for (const file of changedFiles) {
     const winningIndices = selectMappingsForFile(file, normalizedMappings);
     for (const idx of winningIndices) {
       const m = normalizedMappings[idx];
-      for (const docPath of m.docPaths) {
-        if (!docToContributingFiles.has(docPath)) {
-          docToContributingFiles.set(docPath, new Set());
-          docToContributingFiles.get(docPath).add(file);
-          docToStrategy.set(docPath, m.strategy);
+      for (const doc of m.docs) {
+        if (!docToContributingFiles.has(doc.path)) {
+          docToContributingFiles.set(doc.path, new Set());
+          docToContributingFiles.get(doc.path).add(file);
+          docToStrategy.set(doc.path, m.strategy);
+          docToType.set(doc.path, doc.type || 'repo');
         } else {
-          docToContributingFiles.get(docPath).add(file);
+          docToContributingFiles.get(doc.path).add(file);
         }
       }
     }
@@ -88,7 +97,7 @@ function resolveTargets(changedFiles, rawManifest) {
 
   const docPaths = [...docToContributingFiles.keys()];
   if (docPaths.length === 0) {
-    return { docPaths: [], warnings: [], strategyByDoc: new Map() };
+    return { docPaths: [], warnings: [], strategyByDoc: new Map(), docTypeByDoc: new Map() };
   }
 
   const ranked = docPaths
@@ -104,12 +113,17 @@ function resolveTargets(changedFiles, rawManifest) {
   }
 
   const strategyByDoc = new Map();
-  selected.forEach(x => strategyByDoc.set(x.path, docToStrategy.get(x.path) || 'suggest'));
+  const docTypeByDoc = new Map();
+  selected.forEach(x => {
+    strategyByDoc.set(x.path, docToStrategy.get(x.path) || 'suggest');
+    docTypeByDoc.set(x.path, docToType.get(x.path) || 'repo');
+  });
 
   return {
     docPaths: selected.map(x => x.path),
     warnings,
-    strategyByDoc
+    strategyByDoc,
+    docTypeByDoc,
   };
 }
 

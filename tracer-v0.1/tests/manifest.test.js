@@ -23,6 +23,22 @@ describe('normalizeMapping', () => {
     assert.deepStrictEqual(out.docPaths, ['docs/b.md']);
     assert.strictEqual(out.strategy, 'pr-comment');
   });
+
+  it('normalizes github-wiki doc type', () => {
+    const out = normalizeMapping({
+      code: { paths: ['src/api/**/*.ts'] },
+      docs: [{ path: 'API-Reference', type: 'github-wiki' }],
+      strategy: 'commit'
+    }, 0);
+    assert.deepStrictEqual(out.docPaths, ['API-Reference']);
+    assert.strictEqual(out.docs[0].type, 'github-wiki');
+    assert.strictEqual(out.strategy, 'commit');
+  });
+
+  it('defaults doc type to repo for string docs', () => {
+    const out = normalizeMapping({ path: 'src/**/*.js', docs: ['docs/a.md'] }, 0);
+    assert.strictEqual(out.docs[0].type, 'repo');
+  });
 });
 
 describe('resolveTargets', () => {
@@ -93,5 +109,40 @@ describe('resolveTargets', () => {
     const { docPaths, strategyByDoc } = resolveTargets(['src/x.js', 'lib/y.js'], manifest);
     assert.strictEqual(strategyByDoc.get('docs/a.md'), 'pr-comment');
     assert.strictEqual(strategyByDoc.get('docs/b.md'), 'suggest');
+  });
+
+  it('returns docTypeByDoc distinguishing repo from github-wiki', () => {
+    const manifest = {
+      mappings: [
+        {
+          code: { paths: ['src/api/**/*.ts'] },
+          docs: [{ path: 'API-Reference', type: 'github-wiki' }],
+          strategy: 'commit'
+        },
+        {
+          code: { paths: ['src/**/*.js'] },
+          docs: [{ path: 'docs/arch.md', type: 'repo' }],
+          strategy: 'suggest'
+        }
+      ]
+    };
+    const { docPaths, docTypeByDoc, strategyByDoc } = resolveTargets(
+      ['src/api/users.ts', 'src/utils.js'], manifest
+    );
+    assert.ok(docPaths.includes('API-Reference'));
+    assert.ok(docPaths.includes('docs/arch.md'));
+    assert.strictEqual(docTypeByDoc.get('API-Reference'), 'github-wiki');
+    assert.strictEqual(docTypeByDoc.get('docs/arch.md'), 'repo');
+    assert.strictEqual(strategyByDoc.get('API-Reference'), 'commit');
+  });
+
+  it('defaults docType to repo for legacy string docs', () => {
+    const manifest = {
+      mappings: [
+        { path: 'src/**/*.js', docs: ['docs/legacy.md'] }
+      ]
+    };
+    const { docTypeByDoc } = resolveTargets(['src/foo.js'], manifest);
+    assert.strictEqual(docTypeByDoc.get('docs/legacy.md'), 'repo');
   });
 });
