@@ -1,0 +1,8 @@
+version: "0.1"
+mappings:
+  - path: "src/**/*.js"
+    docs:
+      - "docs/architecture.md"
+  - path: "database/schema.sql"
+    docs:
+      - "docs/database.md"

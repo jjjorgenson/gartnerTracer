@@ -1,0 +1,38 @@
+name: Tracer AI Doc Agent
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tracer-doc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed to generate the git diff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Tracer Dependencies
+        run: npm install js-yaml minimatch
+
+      - name: Run Tracer CLI
+        env:
+          TRACER_PROVIDER_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p .tracer
+          git diff origin/${{ github.base_ref }}...HEAD > pr.diff
+          node cli.js -m tracer.manifest.yaml -d pr.diff
+        continue-on-error: true # Fail-Open policy: Don't block the PR if Tracer fails
+
+      - name: Upload Tracer Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tracer-artifacts
+          path: .tracer/
+          retention-days: 14

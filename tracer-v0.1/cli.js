@@ -1,0 +1,207 @@
+#!/usr/bin/env node
+
+/**
+ * TRACER v0.1 - Core CLI (agent | accept | reject)
+ * Agent: 14-step execution lifecycle. accept/reject: mark suggestion and update doc-status.
+ */
+
+const { execSync } = require('node:child_process');
+
+const { parseArgs } = require('node:util');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const yaml = require('js-yaml');
+const { resolveTargets } = require('./manifest');
+const { callAnthropicWithRetry } = require('./ai');
+const { postPrComment } = require('./github');
+const { resolveArtifactPath, acceptSuggestion, rejectSuggestion } = require('./accept-reject');
+
+const { logSpan } = require('./logger');
+const { deliverSuggestion, getTracerDir } = require('./delivery');
+const { validateDocUpdate } = require('./validate');
+
+// --- ARGUMENT PARSING ---
+const options = {
+  manifest: { type: 'string', short: 'm', default: 'tracer.manifest.yaml' },
+  diff: { type: 'string', short: 'd' }
+};
+
+let args;
+try {
+  args = parseArgs({ options, strict: true, allowPositionals: true });
+} catch (err) {
+  console.error(`❌ CLI Argument Error: ${err.message}`);
+  process.exit(2);
+}
+
+const command = (args.positionals && args.positionals[0]) || 'agent';
+const artifactArg = args.positionals && args.positionals[1];
+
+if (command === 'accept' || command === 'reject') {
+  const artifactPath = resolveArtifactPath(artifactArg);
+  if (!artifactPath) {
+    console.error(`❌ Artifact not found: ${artifactArg || '(missing)'}. Use path to suggestion JSON or suggestion ID.`);
+    process.exit(2);
+  }
+  try {
+    if (command === 'accept') acceptSuggestion(artifactPath);
+    else rejectSuggestion(artifactPath);
+    process.exit(0);
+  } catch (err) {
+    console.error(`💥 ${command} failed: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+const API_KEY = process.env.TRACER_PROVIDER_API_KEY;
+if (!API_KEY || API_KEY === 'dummy_key') {
+  console.error("❌ Missing or invalid environment variable: TRACER_PROVIDER_API_KEY");
+  process.exit(2);
+}
+
+/** Parse changed file paths from a unified diff (e.g. from `git diff` or -d file). */
+function parseChangedFilesFromDiff(diffContent) {
+  const paths = new Set();
+  const lines = diffContent.split('\n');
+  for (const line of lines) {
+    const m = line.match(/^diff --git a\/(.+?) b\/(.+)$/);
+    if (m) paths.add(m[2].trim()); // use "b" path (current name)
+  }
+  return [...paths];
+}
+
+// --- CORE LIFECYCLE ENGINE ---
+async function runLifecycle() {
+  const startTime = Date.now();
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  try {
+    console.log("🚀 Starting Tracer Agent...");
+
+    // Step 2: Load manifest
+    console.log(`📂 Loading manifest: ${args.values.manifest}`);
+    if (!fs.existsSync(args.values.manifest)) {
+      throw new Error(`Manifest not found at ${args.values.manifest}`);
+    }
+    const manifest = yaml.load(fs.readFileSync(args.values.manifest, 'utf8')) || {};
+
+    // Step 3 & 4: Detect git context & collect changed files
+    console.log("🔍 Detecting git diff...");
+    let changedFiles = [];
+    let diffString = "";
+
+    if (args.values.diff && fs.existsSync(args.values.diff)) {
+      // CI path: read diff from file (e.g. pr.diff from workflow)
+      diffString = fs.readFileSync(args.values.diff, 'utf8');
+      changedFiles = parseChangedFilesFromDiff(diffString);
+      if (changedFiles.length === 0) {
+        console.log("⏭️ No changed files in diff. Exiting gracefully.");
+        process.exit(0);
+      }
+    } else {
+      try {
+        const nameOnlyOutput = execSync('git diff --name-only HEAD', { encoding: 'utf8' });
+        changedFiles = nameOnlyOutput.split('\n').filter(line => line.trim() !== '');
+        diffString = execSync('git diff HEAD', { encoding: 'utf8' });
+        if (changedFiles.length === 0) {
+          console.log("⏭️ No git changes detected. Exiting gracefully.");
+          process.exit(0);
+        }
+      } catch (err) {
+        console.error("💥 Git integration failed. Ensure you are in a git repository with an initial commit.");
+        process.exit(1);
+      }
+    }
+
+    // Step 5: Resolve manifest mappings (precedence, dedupe, rank, max 10)
+    console.log("🗺️ Resolving manifest mappings...");
+    const { docPaths: matchedDocs, warnings, strategyByDoc } = resolveTargets(changedFiles, manifest);
+    if (matchedDocs.length === 0) {
+      console.log("⏭️ No documentation targets matched. Exiting gracefully.");
+      process.exit(9);
+    }
+    warnings.forEach(w => console.warn(`⚠️ ${w}`));
+    console.log(`🎯 Matched Documentation Targets:`, matchedDocs);
+
+    // Step 6: Load affected documentation (process first doc for v0.1; loop later)
+    const docPath = matchedDocs[0];
+    const docContent = fs.readFileSync(docPath, 'utf8');
+
+    // Step 7: Construct AI prompts
+    const systemPrompt = `You are Tracer, an AI documentation agent. Read the code diff and existing doc, and output ONLY the updated markdown. Keep the tone technical and concise.`;
+    const userPrompt = `Code diff:\n<diff>\n${diffString}\n</diff>\n\nCurrent documentation:\n<doc>\n${docContent}\n</doc>\n\nRewrite the documentation to accurately reflect the changes in the diff.`;
+
+    // Step 8: Call AI provider with retries (1s, 4s, 16s on 429/5xx/timeout)
+    console.log("🧠 Calling AI Provider (Claude Sonnet 4.6)...");
+    const body = {
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    };
+    const aiData = await callAnthropicWithRetry(body, API_KEY);
+    const generatedMarkdown = aiData.content[0].text;
+    
+    // Capture token usage for the audit log
+    inputTokens = aiData.usage.input_tokens;
+    outputTokens = aiData.usage.output_tokens;
+
+    // Step 9: Validate generated output (trd3gpt §9 hard-reject)
+    const validation = validateDocUpdate(docContent, generatedMarkdown);
+    if (!validation.valid) {
+      const tracerDir = getTracerDir();
+      const rejectedPath = path.join(tracerDir, 'spans-rejected.jsonl');
+      if (!fs.existsSync(tracerDir)) fs.mkdirSync(tracerDir, { recursive: true });
+      const rejectedLine = JSON.stringify({
+        timestamp: new Date().toISOString(),
+        docPath,
+        reasons: validation.reasons,
+        originalLength: docContent.length,
+        suggestedLength: (generatedMarkdown || '').length
+      }) + '\n';
+      fs.appendFileSync(rejectedPath, rejectedLine, 'utf8');
+      console.warn(`⚠️ Output rejected: ${validation.reasons.join(', ')}. Recorded in spans-rejected.jsonl`);
+      // Still log the span; do not deliver
+    } else {
+      // Steps 10, 11, & 12: Delivery and Status Update
+      const strategy = strategyByDoc.get(docPath) || 'suggest';
+      console.log(`📦 Packaging and delivering suggestion (strategy: ${strategy})...`);
+      await deliverSuggestion(matchedDocs, generatedMarkdown, strategy);
+    }
+
+    // Step 13: Write logs
+    console.log("📊 Writing observability span...");
+    logSpan({
+      id: `span_${crypto.randomUUID()}`,
+      timestamp: new Date().toISOString(),
+      tool: 'tracer-cli',
+      eventType: 'doc_update_generation',
+      model: 'claude-sonnet-4-6',
+      inputTokens,
+      outputTokens,
+      latencyMs: Date.now() - startTime,
+      promptText: userPrompt // Will be safely stripped by logger.js
+    });
+
+    // Step 14: Exit
+    console.log("\n✅ Tracer execution complete.");
+    process.exit(0);
+
+  } catch (err) {
+    if (err.code === 'AI_PROVIDER_FAILURE') {
+      if (process.env.GITHUB_TOKEN) {
+        try {
+          await postPrComment('Tracer: doc update failed, manual review needed.');
+        } catch (_) { /* ignore */ }
+      }
+      console.error(`💥 AI Provider Failure: ${err.message}`);
+      process.exit(3);
+    }
+    console.error(`💥 Runtime Failure: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+runLifecycle();
