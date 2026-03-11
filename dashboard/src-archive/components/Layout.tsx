@@ -33,17 +33,18 @@ export function Layout() {
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [])
 
+  // Handle ?connected=1 and ?auth=ok
   useEffect(() => {
     const connected = searchParams.get('connected')
     const auth = searchParams.get('auth')
     if (connected === '1') {
       refetchRepos()
-      setBanner('Repository connected successfully.')
+      setBanner('Repo connected.')
       const repo = searchParams.get('repo')
       setSearchParams(repo ? { repo } : {})
     } else if (auth === 'ok') {
       refetchRepos()
-      setBanner('Signed in.')
+      setBanner('Logged in.')
       const repo = searchParams.get('repo')
       setSearchParams(repo ? { repo } : {})
     }
@@ -59,24 +60,23 @@ export function Layout() {
     <div className="min-h-screen text-[var(--color-text)]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:pl-60">
+      <div className="lg:pl-56">
         {banner && (
           <div
-            className="flex items-center justify-center gap-2 border-b border-[var(--color-success)]/30 bg-[var(--color-success)]/8 px-4 py-2.5 text-sm"
+            className="sticky top-0 z-40 flex items-center justify-center gap-2 border-b border-[var(--color-success)]/40 bg-[var(--color-success)]/15 px-4 py-3 text-sm text-[var(--color-text)]"
             role="alert"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2" aria-hidden>
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
+            <span aria-hidden className="shrink-0 text-[var(--color-success)]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5" /></svg>
+            </span>
             <span>{banner}</span>
           </div>
         )}
-
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-bg)]/95 px-4 backdrop-blur-sm">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)]/95 px-4 backdrop-blur">
           <button
             type="button"
             onClick={() => setSidebarOpen((o) => !o)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)] lg:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)] lg:hidden"
             aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={sidebarOpen}
           >
@@ -88,29 +88,23 @@ export function Layout() {
               )}
             </svg>
           </button>
-
+          <span className="min-w-0 truncate text-sm text-[var(--color-text-subtle)]" aria-hidden>
+            Search
+          </span>
           <div className="ml-auto flex shrink-0 items-center gap-2">
             {!hasApi() && (
-              <span className="text-xs text-[var(--color-text-subtle)]">
-                Static mode ·{' '}
-                <a href="https://github.com/jjjorgenson/gartnerTracer#install-and-run" target="_blank" rel="noopener noreferrer">
-                  Connect backend
-                </a>
+              <span className="text-sm text-[var(--color-text-subtle)]" title="Set VITE_API_BASE in .env to your backend URL (e.g. http://localhost:3002) and restart the dev server to enable login.">
+                Using static data · <a href="https://github.com/jjjorgenson/gartnerTracer#install-and-run" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent)] hover:underline">Connect to backend</a>
               </span>
             )}
-
             {hasApi() && apiError === 'unauthorized' && (
               <a
                 href={getLoginUrl()}
-                className="btn-accent inline-flex min-h-[36px] items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] transition-colors"
+                className="link-on-accent min-h-[44px] inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--color-accent-hover)] focus-visible:outline-offset-2"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-                Sign in with GitHub
+                Log in with GitHub
               </a>
             )}
-
             {hasApi() && user && (
               <>
                 {repos.length > 1 && (
@@ -118,16 +112,16 @@ export function Layout() {
                     <button
                       type="button"
                       onClick={() => setRepoDropdownOpen((o) => !o)}
-                      className="flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-sm text-[var(--color-text)] hover:border-[var(--color-border-subtle)] transition-colors"
+                      className="min-h-[44px] flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
                       aria-expanded={repoDropdownOpen}
                       aria-haspopup="listbox"
                     >
-                      <span className="max-w-[140px] truncate font-mono text-xs">{selectedRepo || 'Select repo'}</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[var(--color-text-subtle)]" aria-hidden><path d="M6 9l6 6 6-6" /></svg>
+                      <span className="max-w-[120px] truncate">{selectedRepo || 'Select repo'}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                     </button>
                     {repoDropdownOpen && (
                       <div
-                        className="absolute right-0 top-full z-50 mt-1.5 min-w-[200px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-1 shadow-2xl"
+                        className="absolute right-0 top-full z-50 mt-1 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-1 shadow-lg"
                         role="listbox"
                       >
                         {repos.map((r) => (
@@ -140,11 +134,7 @@ export function Layout() {
                               setSelectedRepo(r.repo)
                               setRepoDropdownOpen(false)
                             }}
-                            className={`flex w-full items-center px-3 py-2 text-left font-mono text-xs transition-colors ${
-                              r.repo === selectedRepo
-                                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
-                                : 'text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]'
-                            }`}
+                            className="block w-full truncate px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-border)]"
                           >
                             {r.repo}
                           </button>
@@ -153,34 +143,31 @@ export function Layout() {
                     )}
                   </div>
                 )}
-
                 <a
                   href={user ? getInstallUrl(String(user.id)) : '#'}
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-sm text-[var(--color-text-muted)] hover:border-[var(--color-border-subtle)] hover:text-[var(--color-text)] transition-colors"
+                  className="min-h-[44px] inline-flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M12 4v16m8-8H4" /></svg>
-                  Connect
+                  Connect Repo
                 </a>
-
                 <div className="relative" ref={userMenuRef}>
                   <button
                     type="button"
                     onClick={() => setUserMenuOpen((o) => !o)}
-                    className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] hover:border-[var(--color-border-subtle)] transition-colors"
+                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-text)] hover:bg-[var(--color-border)]"
                     aria-expanded={userMenuOpen}
                     aria-haspopup="menu"
                     title={user?.login}
                   >
                     {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt="" className="h-full w-full object-cover" width={32} height={32} />
+                      <img src={user.avatar_url} alt="" className="h-full w-full object-cover" width={36} height={36} />
                     ) : (
-                      <span className="text-xs font-medium text-[var(--color-text-muted)]">{user?.login?.slice(0, 2).toUpperCase()}</span>
+                      <span className="text-sm font-medium">{user?.login?.slice(0, 2).toUpperCase()}</span>
                     )}
                   </button>
                   {userMenuOpen && (
-                    <div className="absolute right-0 top-full z-50 mt-1.5 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-1 shadow-2xl">
-                      <div className="border-b border-[var(--color-border)] px-3 py-2">
-                        <p className="text-sm font-medium text-[var(--color-text)]">{user?.login}</p>
+                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-1 shadow-lg">
+                      <div className="border-b border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)]">
+                        {user?.login}
                       </div>
                       <button
                         type="button"
@@ -188,31 +175,33 @@ export function Layout() {
                           setManageReposOpen(true)
                           setUserMenuOpen(false)
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)] transition-colors"
+                        className="block w-full px-3 py-2 text-left text-sm text-[var(--color-text)] hover:bg-[var(--color-border)]"
                       >
-                        Manage repos
+                        Manage Repos
                       </button>
                       <a
                         href={getLogoutUrl()}
-                        className="flex items-center gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-danger)] hover:bg-[var(--color-border)] transition-colors"
+                        className="block border-t border-[var(--color-border)] px-3 py-2.5 text-left text-sm text-[var(--color-danger)] hover:bg-[var(--color-border)]"
                       >
-                        Sign out
+                        Log out
                       </a>
                     </div>
                   )}
                 </div>
               </>
             )}
-
             <SyncButton />
           </div>
         </header>
-
-        <main className="animate-in p-5 lg:p-8" role="main">
+        <main className="p-4 lg:p-6" role="main">
           <Outlet />
         </main>
+        <footer className="border-t border-[var(--color-border)] px-4 py-3 text-center text-sm text-[var(--color-text-subtle)]">
+          <a href="https://tracer.dev/docs" target="_blank" rel="noopener noreferrer">
+            tracer.dev/docs
+          </a>
+        </footer>
       </div>
-
       {manageReposOpen && (
         <ManageReposModal
           repos={repos}
@@ -235,13 +224,10 @@ function SyncButton() {
     <button
       type="button"
       onClick={handleSync}
-      className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-text-subtle)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-muted)] transition-colors"
+      className="min-h-[44px] inline-flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
       aria-label="Refresh dashboard data"
-      title="Refresh"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
+      Refresh data
     </button>
   )
 }
@@ -285,42 +271,49 @@ function ManageReposModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="manage-repos-title">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="manage-repos-title">
       <div
         ref={panelRef}
-        className="animate-in max-h-[80vh] w-full max-w-md overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl"
+        className="max-h-[80vh] w-full max-w-md overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-xl"
       >
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-          <h2 id="manage-repos-title" className="font-display text-xl text-[var(--color-text)]">Manage Repos</h2>
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+          <h2 id="manage-repos-title" className="text-lg font-semibold text-[var(--color-text)]">Manage Repos</h2>
           <button
             type="button"
             ref={closeRef}
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-text-subtle)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-muted)] transition-colors"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]"
             aria-label="Close"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
         </div>
-        <div className="max-h-[60vh] overflow-y-auto p-5">
+        <div className="max-h-[60vh] overflow-y-auto p-4">
           {repos.length === 0 ? (
-            <div className="dotted-grid rounded-lg py-10 text-center">
-              <p className="text-sm font-medium text-[var(--color-text)]">No repositories connected</p>
-              <p className="mt-1 text-xs text-[var(--color-text-subtle)]">Use the Connect button in the header to add one.</p>
+            <div className="py-6 text-center">
+              <p className="font-medium text-[var(--color-text)]">No repos connected</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Connect a repo from the header to see it here.</p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-4 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+              >
+                Close
+              </button>
             </div>
           ) : (
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {repos.map((r) => (
-                <li key={r.repo} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 hover:bg-[var(--color-border)]/50 transition-colors">
-                  <a href={r.repoUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-mono text-xs text-[var(--color-text)] hover:text-[var(--color-accent)]">{r.repo}</a>
+                <li key={r.repo} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2">
+                  <a href={r.repoUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-sm font-medium text-[var(--color-text)] hover:underline">{r.repo}</a>
                   {confirmRepo === r.repo ? (
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className="text-xs text-[var(--color-text-subtle)]">Remove?</span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <span className="text-xs text-[var(--color-text-muted)]">Remove?</span>
                       <button type="button" onClick={() => handleDisconnect(r.repo)} disabled={disconnecting === r.repo} className="text-xs font-medium text-[var(--color-danger)] hover:underline">Yes</button>
-                      <button type="button" onClick={() => setConfirmRepo(null)} className="text-xs font-medium text-[var(--color-text-subtle)] hover:underline">No</button>
+                      <button type="button" onClick={() => setConfirmRepo(null)} className="text-xs font-medium text-[var(--color-text-muted)] hover:underline">No</button>
                     </span>
                   ) : (
-                    <button type="button" onClick={() => setConfirmRepo(r.repo)} className="shrink-0 text-xs text-[var(--color-text-subtle)] hover:text-[var(--color-danger)] transition-colors">Disconnect</button>
+                    <button type="button" onClick={() => setConfirmRepo(r.repo)} className="shrink-0 text-sm font-medium text-[var(--color-danger)] hover:underline">Disconnect</button>
                   )}
                 </li>
               ))}

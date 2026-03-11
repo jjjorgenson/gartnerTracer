@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - tracer report (TRD Epic 4.1, 4.2).
+ * AutoDocs v0.1 - report command (TRD Epic 4.1, 4.2).
  * Reads spans.jsonl, aggregates by model/tool/time, outputs table or JSON.
  */
 const fs = require('node:fs');
@@ -89,7 +89,7 @@ function aggregate(spans, pricing) {
 
 function formatTable(agg) {
   const lines = [];
-  lines.push('--- Tracer report ---');
+  lines.push('--- AutoDocs report ---');
   lines.push(`Total spans: ${agg.count}  Input tokens: ${agg.totalInput}  Output tokens: ${agg.totalOutput}  Est. cost: $${agg.totalCost.toFixed(4)}`);
   lines.push('');
   lines.push('By model:');

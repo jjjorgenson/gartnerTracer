@@ -101,7 +101,7 @@ describe('deliverToWiki', () => {
     assert.ok(content.includes('# Test'));
 
     const log = execSync('git log --oneline -1', { cwd: wikiDir, encoding: 'utf8' });
-    assert.ok(log.includes('Tracer: updated Test-Page'));
+    assert.ok(log.includes('AutoDocs: updated Test-Page'));
     assert.ok(log.includes('PR #42'));
   });
 });

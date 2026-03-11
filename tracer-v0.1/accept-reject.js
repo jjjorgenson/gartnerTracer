@@ -51,7 +51,7 @@ function acceptSuggestion(artifactPath) {
       const pageSlug = docPath.startsWith('wiki:') ? docPath.slice(5) : docPath;
       const { GitHubWikiAdapter } = require('./adapters/github-wiki');
       const adapter = new GitHubWikiAdapter();
-      const result = adapter.write(pageSlug, content, `Tracer: accepted suggestion ${id}`);
+      const result = adapter.write(pageSlug, content, `AutoDocs: accepted suggestion ${id}`);
       console.log(`\u2705 Wiki page "${pageSlug}" ${result.pushed ? 'pushed' : 'committed locally'}`);
     } else {
       const fullPath = path.isAbsolute(docPath) ? docPath : path.join(process.cwd(), docPath);

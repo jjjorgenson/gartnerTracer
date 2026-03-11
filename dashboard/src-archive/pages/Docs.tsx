@@ -49,11 +49,11 @@ export function Docs() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="font-display text-3xl text-[var(--color-text)]">Docs</h1>
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]" style={{ fontFamily: 'var(--font-display)' }}>Docs</h1>
         <div className="space-y-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="skeleton h-12" aria-hidden />
+            <div key={i} className="skeleton h-14 w-full" aria-hidden />
           ))}
         </div>
       </div>
@@ -61,70 +61,59 @@ export function Docs() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-baseline gap-4">
-        <h1 className="font-display text-3xl text-[var(--color-text)]">Docs</h1>
-        {entries.length > 0 && (
-          <span className="text-xs text-[var(--color-text-subtle)]">{entries.length} tracked</span>
-        )}
-      </div>
-
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: 'var(--font-display)' }}>Docs</h1>
       {loadErrors.length > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5 px-4 py-3" role="alert">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden>
-            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <p className="text-sm text-[var(--color-text-muted)]">{loadErrors.slice(0, 2).join(' ')}</p>
+        <div className="flex items-start gap-3 rounded-lg border border-[var(--color-warning)]/50 bg-[var(--color-warning)]/10 px-4 py-3 text-sm text-[var(--color-text)]" role="alert">
+          <span className="shrink-0 text-[var(--color-warning)]" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </span>
+          <p>{loadErrors.slice(0, 2).join(' ')}</p>
         </div>
       )}
-
       {entries.length === 0 && (
-        <div className="dotted-grid rounded-xl border border-[var(--color-border)] p-12 text-center">
-          <h2 className="font-display text-2xl text-[var(--color-text)]">No docs tracked</h2>
-          <p className="mx-auto mt-3 max-w-sm text-sm text-[var(--color-text-subtle)]">
-            Configure the manifest and run the agent to see doc status here.
-          </p>
-          <Link to="/settings" className="btn-accent mt-6 inline-flex items-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] transition-colors">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-10 text-center">
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">No docs tracked</h2>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">Configure the manifest and run the agent to see doc status here.</p>
+          <Link to="/settings" className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]">
             Open Settings
           </Link>
         </div>
       )}
-
       {entries.length > 0 && (
         <>
           <div className="flex items-center gap-2">
-            <label htmlFor="sort" className="text-xs text-[var(--color-text-subtle)]">Sort</label>
+            <label htmlFor="sort" className="text-sm font-medium text-[var(--color-text-muted)]">Sort by</label>
             <select
               id="sort"
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-sm text-[var(--color-text)] hover:border-[var(--color-border-subtle)] transition-colors"
+              className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm text-[var(--color-text)]"
             >
               <option value="path">Path</option>
               <option value="lastUpdated">Last updated</option>
               <option value="state">State</option>
             </select>
           </div>
-
-          <div className="divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
+          <ul className="space-y-2">
             {entries.map(([path, entry]) => (
-              <div
+              <li
                 key={path}
-                className="flex flex-wrap items-center gap-3 px-5 py-3.5 first:rounded-t-lg last:rounded-b-lg"
+                className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3"
               >
-                <StateBadge state={entry.state} />
-                <span className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--color-text)]">
-                  {path.startsWith('wiki:') ? `wiki/${path.replace(/^wiki:/, '')}` : path}
+                <span className="font-medium text-[var(--color-text)]">
+                  {path.startsWith('wiki:') ? `Wiki: ${path.replace(/^wiki:/, '')}` : path}
                 </span>
-                <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)]">
+                <StateBadge state={entry.state} />
+                <span className="text-sm text-[var(--color-text-subtle)]">
                   {entry.lastVerifiedCommit ? entry.lastVerifiedCommit.slice(0, 7) : '—'}
                 </span>
-                <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">
+                <span className="text-sm text-[var(--color-text-subtle)]">
                   {entry.lastUpdated ? formatRelativeTime(entry.lastUpdated) : '—'}
                 </span>
                 {entry.state === 'stale' && entry.staleReason && (
-                  <span className="text-[10px] text-[var(--color-warning)]" title={entry.staleReason}>
-                    {entry.staleReason.slice(0, 50)}…
+                  <span className="text-xs text-[var(--color-text-subtle)]" title={entry.staleReason}>
+                    {entry.staleReason.slice(0, 60)}…
                   </span>
                 )}
                 {openUrl(path) && (
@@ -132,14 +121,14 @@ export function Docs() {
                     href={openUrl(path)!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 text-xs text-[var(--color-text-subtle)] hover:text-[var(--color-accent)] transition-colors"
+                    className="text-sm text-[var(--color-accent)] hover:underline"
                   >
-                    Open ↗
+                    Open in repo
                   </a>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </>
       )}
     </div>
@@ -148,14 +137,14 @@ export function Docs() {
 
 function StateBadge({ state }: { state: string }) {
   const styles: Record<string, string> = {
-    current: 'bg-[var(--color-success)]/15 text-[var(--color-success)]',
-    pending: 'bg-[var(--color-warning)]/15 text-[var(--color-warning)]',
-    stale: 'bg-[var(--color-border)] text-[var(--color-text-subtle)]',
+    current: 'bg-[var(--color-success)]/20 text-[var(--color-success)]',
+    pending: 'bg-[var(--color-warning)]/20 text-[var(--color-warning)]',
+    stale: 'bg-[var(--color-border)] text-[var(--color-text-muted)]',
     unknown: 'bg-[var(--color-border)] text-[var(--color-text-subtle)]',
   }
   return (
     <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${styles[state] ?? 'bg-[var(--color-border)] text-[var(--color-text-subtle)]'}`}
+      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[state] ?? 'bg-[var(--color-border)] text-[var(--color-text-muted)]'}`}
       role="status"
     >
       {state}

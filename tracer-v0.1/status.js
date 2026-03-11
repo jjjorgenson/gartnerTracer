@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - tracer status (TRD Epic 4.3).
+ * AutoDocs v0.1 - status command (TRD Epic 4.3).
  * Reads doc-status.json and optional manifest; prints doc freshness.
  */
 const fs = require('node:fs');

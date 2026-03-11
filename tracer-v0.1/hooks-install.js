@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Hooks install and status (TRD Epic 3).
+ * AutoDocs v0.1 - Hooks install and status (TRD Epic 3).
  * install: write Cursor hooks.json so cursor-hook.js is invoked.
  * status: print whether hook config exists, last span time, spans path.
  */
@@ -38,7 +38,7 @@ function install() {
   }
   fs.writeFileSync(CURSOR_HOOKS_JSON, JSON.stringify(config, null, 2), 'utf8');
   console.log('Installed Cursor hooks to', CURSOR_HOOKS_JSON);
-  console.log('Tracer will log spans to', SPANS_FILE);
+  console.log('AutoDocs will log spans to', SPANS_FILE);
 }
 
 function status() {

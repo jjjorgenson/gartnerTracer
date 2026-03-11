@@ -76,7 +76,7 @@ function fetchUrl(urlStr) {
   return new Promise(function (resolve, reject) {
     const u = new URL(urlStr);
     const mod = u.protocol === 'https:' ? https : http;
-    mod.get(urlStr, { headers: { 'User-Agent': 'Tracer-Backend/1.0' } }, function (res) {
+    mod.get(urlStr, { headers: { 'User-Agent': 'AutoDocs-Backend/1.0' } }, function (res) {
       if (res.statusCode !== 200) {
         reject(new Error('HTTP ' + res.statusCode));
         return;

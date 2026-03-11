@@ -1,6 +1,6 @@
 # Dashboard data contract
 
-The Tracer dashboard (Phases 1–4) is a static app that reads JSON from `dashboard-data/`. No backend.
+The AutoDocs dashboard (Phases 1–4) is a static app that reads JSON from `dashboard-data/`. No backend.
 
 ## Paths
 

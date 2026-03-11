@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Span JSONL writer with validation (TRD §3.1).
+ * AutoDocs v0.1 - Span JSONL writer with validation (TRD §3.1).
  * Valid spans → ~/.tracer/spans.jsonl; invalid → ~/.tracer/spans-rejected.jsonl with reason.
  * Rotates at 10MB / 5MB.
  */

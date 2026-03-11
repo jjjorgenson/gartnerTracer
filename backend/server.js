@@ -1,5 +1,5 @@
 /**
- * Tracer dashboard backend: OAuth, GitHub App, webhook ingest, API for repos and data.
+ * AutoDocs dashboard backend: OAuth, GitHub App, webhook ingest, API for repos and data.
  */
 const express = require('express');
 const path = require('path');
@@ -13,7 +13,7 @@ const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
 const GITHUB_APP_CLIENT_ID = process.env.GITHUB_APP_CLIENT_ID;
 const GITHUB_APP_PRIVATE_KEY = process.env.GITHUB_APP_PRIVATE_KEY;
 const DASHBOARD_ORIGIN = process.env.DASHBOARD_ORIGIN || 'http://localhost:5174';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'tracer-dev-secret-change-in-production';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'autodocs-dev-secret-change-in-production';
 
 // CORS first so credentials work
 app.use((req, res, next) => {
@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieSession({
-  name: 'tracer_session',
+  name: 'autodocs_session',
   secret: SESSION_SECRET,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   sameSite: 'lax',
@@ -176,7 +176,7 @@ app.get('/api/auth/install', (req, res) => {
     return res.status(503).json({ error: 'GitHub App not configured' });
   }
   const state = req.query.state || '';
-  const redirect = 'https://github.com/apps/' + (process.env.GITHUB_APP_SLUG || 'tracer') + '/installations/new?client_id=' + GITHUB_APP_CLIENT_ID + '&state=' + encodeURIComponent(state);
+  const redirect = 'https://github.com/apps/' + (process.env.GITHUB_APP_SLUG || 'autodocs') + '/installations/new?client_id=' + GITHUB_APP_CLIENT_ID + '&state=' + encodeURIComponent(state);
   res.redirect(redirect);
 });
 
@@ -222,5 +222,5 @@ app.delete('/api/repos/:owner/:repo', requireAuth, (req, res) => {
 
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
-  console.log(`Tracer backend listening on port ${PORT}`);
+  console.log(`AutoDocs backend listening on port ${PORT}`);
 });

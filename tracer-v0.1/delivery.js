@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Delivery Adapter (suggest | pr-comment | commit)
+ * AutoDocs v0.1 - Delivery Adapter (suggest | pr-comment | commit)
  * The commit strategy routes github-wiki docs through the WikiAdapter.
  * Writes DocUpdate artifacts (TRD §3.2) and updates doc-status (TRD §6).
  */
@@ -80,7 +80,7 @@ async function deliverToWiki(pageSlug, content, context = {}) {
   const { GitHubWikiAdapter } = require('./adapters/github-wiki');
   const adapter = new GitHubWikiAdapter({ repo: context.repo });
 
-  const parts = [`Tracer: updated ${pageSlug}`];
+  const parts = [`AutoDocs: updated ${pageSlug}`];
   if (context.prNumber) parts.push(`PR #${context.prNumber}`);
   if (context.commitHash) parts.push(`commit ${context.commitHash.slice(0, 7)}`);
   const message = parts.length > 1
@@ -184,7 +184,7 @@ async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, docPath, docC
 
   try {
     if (strategy === 'pr-comment' && process.env.GITHUB_TOKEN) {
-      const body = `## Tracer: suggested doc update\n\nTargets: ${matchedDocs.join(', ')}\n\n<details>\n<summary>Suggested content</summary>\n\n\`\`\`markdown\n${aiGeneratedMarkdown}\n\`\`\`\n\n</details>`;
+      const body = `## AutoDocs: suggested doc update\n\nTargets: ${matchedDocs.join(', ')}\n\n<details>\n<summary>Suggested content</summary>\n\n\`\`\`markdown\n${aiGeneratedMarkdown}\n\`\`\`\n\n</details>`;
       const commentUrl = await postPrComment(body);
       console.log(`\u2705 [Delivery] PR comment posted: ${commentUrl}`);
       writeSuggestArtifact(matchedDocs, aiGeneratedMarkdown, suggestionId);

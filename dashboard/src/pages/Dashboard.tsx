@@ -52,14 +52,18 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: 'var(--font-display)' }}>Dashboard</h1>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-lg bg-[var(--color-border)]" aria-hidden />
+      <div className="space-y-8">
+        <h1 className="font-display text-3xl text-[var(--color-text)]">Dashboard</h1>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="skeleton h-[88px]" aria-hidden />
           ))}
         </div>
-        <div className="h-48 animate-pulse rounded-lg bg-[var(--color-border)]" aria-hidden />
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton h-12" aria-hidden />
+          ))}
+        </div>
       </div>
     )
   }
@@ -67,130 +71,115 @@ export function Dashboard() {
   const hasData = entries.length > 0 || changeSummaries.length > 0 || docUpdates.length > 0
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-text)]" style={{ fontFamily: 'var(--font-display)' }}>
-        Dashboard
-      </h1>
+    <div className="space-y-8">
+      <div className="flex items-baseline gap-4">
+        <h1 className="font-display text-3xl text-[var(--color-text)]">Dashboard</h1>
+        {latestTimestamp && (
+          <p className="text-xs text-[var(--color-text-subtle)]">
+            Updated {formatRelativeTime(latestTimestamp)}
+            {latestCommit && (
+              <span className="font-mono"> · {latestCommit}</span>
+            )}
+          </p>
+        )}
+      </div>
 
       {loadErrors.length > 0 && (
         <div
-          className="rounded-lg border border-amber-600/50 bg-amber-900/20 px-4 py-2 text-amber-100"
+          className="flex items-start gap-3 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5 px-4 py-3"
           role="alert"
         >
-          Some data could not be loaded: {loadErrors.join(', ')}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden>
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-sm text-[var(--color-text-muted)]">{loadErrors.slice(0, 2).join(' ')}</p>
         </div>
       )}
 
       {!hasData && (
-        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] p-8 text-center">
-          <p className="text-[var(--color-text-muted)]">
-            No data yet. Run the Tracer agent in CI or locally to populate this dashboard.
+        <div className="dotted-grid rounded-xl border border-[var(--color-border)] p-12 text-center">
+          <h2 className="font-display text-2xl text-[var(--color-text)]">No activity yet</h2>
+          <p className="mx-auto mt-3 max-w-sm text-sm text-[var(--color-text-subtle)]">
+            Run the AutoDocs agent in CI or locally to start tracking documentation changes.
           </p>
           <a
-            href="https://tracer.dev/docs"
+            href="https://github.com/jjjorgenson/gartnerTracer#install-and-run"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-[var(--color-accent)] hover:underline"
+            className="btn-accent mt-6 inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] transition-colors"
           >
-            Setup guide
+            View setup guide
           </a>
         </div>
       )}
 
       {hasData && (
         <>
-          <section aria-label="Metrics" className="grid grid-cols-2 gap-4 md:grid-cols-5 lg:grid-cols-6">
-            <MetricCard label="Current" value={currentCount} />
-            <MetricCard label="Pending" value={pendingCount} />
-            <MetricCard
-              label="May need review"
-              value={staleCount}
-              title="Code changed since last update. Some docs are intentionally stable."
-            />
-            <MetricCard label="Docs tracked" value={entries.length} />
-            <MetricCard
-              label="Agent runs"
-              value={changeSummaries.length}
-            />
-            <MetricCard
-              label="AI cost"
-              value={totalCost > 0 ? `$${totalCost.toFixed(2)}` : '—'}
-              title="Cost tracking coming soon"
-            />
+          <section aria-label="Metrics">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+              <MetricCard label="Current" value={currentCount} accent={currentCount > 0} />
+              <MetricCard label="Pending" value={pendingCount} warn={pendingCount > 0} />
+              <MetricCard
+                label="Needs Review"
+                value={staleCount}
+                title="Code changed since last update"
+              />
+              <MetricCard label="Tracked" value={entries.length} />
+              <MetricCard label="Agent Runs" value={changeSummaries.length} />
+              <MetricCard
+                label="AI Cost"
+                value={totalCost > 0 ? `$${totalCost.toFixed(2)}` : '—'}
+              />
+            </div>
           </section>
 
-          {latestTimestamp && (
-            <p className="text-sm text-[var(--color-text-subtle)]">
-              Last updated: {formatRelativeTime(latestTimestamp)}
-              {latestCommit && ` (commit ${latestCommit})`}
-            </p>
-          )}
-
-          <section>
-            <h2 className="mb-3 font-medium text-[var(--color-text)]">Recent Activity</h2>
-            <ul className="space-y-2">
+          <section aria-label="Recent Activity">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="micro-label">Recent Activity</h2>
+              <Link to="/timeline" className="text-xs text-[var(--color-text-subtle)] hover:text-[var(--color-accent)] transition-colors">
+                View all
+              </Link>
+            </div>
+            <div className="divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
               {recentItems.map((item) => (
-                <li key={`${item.type}-${item.id}`}>
-                  <Link
-                    to={item.link}
-                    className="block rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-[var(--color-text)] hover:bg-[var(--color-border)]"
-                  >
-                    <span className="font-medium">{item.label}</span>
-                    <span className="ml-2 text-sm text-[var(--color-text-muted)]">{item.sub}</span>
-                    <span className="ml-2 text-xs text-[var(--color-text-subtle)]">
-                      {formatRelativeTime(item.timestamp)}
-                    </span>
-                  </Link>
-                </li>
+                <Link
+                  key={`${item.type}-${item.id}`}
+                  to={item.link}
+                  className="flex items-center gap-3 px-4 py-3 text-[var(--color-text)] hover:bg-[var(--color-border)]/50 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                >
+                  <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.type === 'summary' ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-text-subtle)]'}`} />
+                  <span className="min-w-0 flex-1 truncate text-sm">{item.label}</span>
+                  <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)]">
+                    {item.sub}
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">
+                    {formatRelativeTime(item.timestamp)}
+                  </span>
+                </Link>
               ))}
-            </ul>
+            </div>
           </section>
 
-          <section>
-            <h2 className="mb-3 font-medium text-[var(--color-text)]" style={{ fontFamily: 'var(--font-body)' }}>
-              Quick Actions
-            </h2>
+          <section aria-label="Quick Actions">
+            <h2 className="micro-label mb-4">Quick Actions</h2>
             <div className="flex flex-wrap gap-2">
               {pendingCount > 0 && (
                 <Link
                   to="/docs"
-                  className="link-on-accent rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-accent-hover)]"
+                  className="btn-accent inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] transition-colors"
                 >
                   View {pendingCount} pending doc{pendingCount !== 1 ? 's' : ''}
                 </Link>
               )}
               {latestTimestamp && (
-                <Link
+                <ActionLink
                   to={changeSummaries[0] ? `/timeline/commit/${changeSummaries[0].commitHash}` : '/timeline'}
-                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
-                >
-                  Latest commit
-                </Link>
+                  label="Latest commit"
+                />
               )}
-              <Link
-                to="/timeline"
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
-              >
-                Timeline
-              </Link>
-              <Link
-                to="/agent-log"
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
-              >
-                Agent Log
-              </Link>
-              <Link
-                to="/docs"
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
-              >
-                Browse Docs
-              </Link>
-              <Link
-                to="/settings"
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-border)]"
-              >
-                Settings
-              </Link>
+              <ActionLink to="/timeline" label="Timeline" />
+              <ActionLink to="/agent-log" label="Agent log" />
+              <ActionLink to="/docs" label="Browse docs" />
             </div>
           </section>
         </>
@@ -199,14 +188,29 @@ export function Dashboard() {
   )
 }
 
+function ActionLink({ to, label }: { to: string; label: string }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-muted)] hover:border-[var(--color-border-subtle)] hover:text-[var(--color-text)] transition-colors"
+    >
+      {label}
+    </Link>
+  )
+}
+
 function MetricCard({
   label,
   value,
   title,
+  accent,
+  warn,
 }: {
   label: string
   value: number | string
   title?: string
+  accent?: boolean
+  warn?: boolean
 }) {
   return (
     <div
@@ -215,8 +219,14 @@ function MetricCard({
       role="region"
       aria-label={label}
     >
-      <div className="text-2xl font-semibold tracking-tight text-[var(--color-text)]" style={{ fontFamily: 'var(--font-display)' }}>{value}</div>
-      <div className="text-sm text-[var(--color-text-muted)]">{label}</div>
+      <div
+        className={`font-mono text-2xl font-medium tracking-tight ${
+          accent ? 'text-[var(--color-success)]' : warn ? 'text-[var(--color-warning)]' : 'text-[var(--color-text)]'
+        }`}
+      >
+        {value}
+      </div>
+      <div className="micro-label mt-1">{label}</div>
     </div>
   )
 }

@@ -143,7 +143,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     }
     const urlRepo = searchParams.get('repo')
     const effective = urlRepo || (repos.length > 0 ? repos[0].repo : null)
-    if (!user) return
+    if (!user) {
+      if (apiError) {
+        setState((s) => ({ ...s, loading: false, docStatus: {}, changeSummaries: [], docUpdates: [], loadErrors: [] }))
+      }
+      return
+    }
     if (!effective) {
       setState((s) => ({ ...s, loading: false, docStatus: {}, changeSummaries: [], docUpdates: [], loadErrors: [] }))
       return
@@ -165,12 +170,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         loading: false,
       }))
     })
-  }, [hasApi(), user?.id, selectedRepoFromUrl, repos.length])
+  }, [hasApi(), user?.id, selectedRepoFromUrl, repos.length, apiError])
 
   useEffect(() => {
     const handler = () => refresh()
-    window.addEventListener('tracer-refresh', handler)
-    return () => window.removeEventListener('tracer-refresh', handler)
+    window.addEventListener('autodocs-refresh', handler)
+    return () => window.removeEventListener('autodocs-refresh', handler)
   }, [refresh])
 
   const value: DashboardDataState = {

@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - Fail-Open Telemetry Logger
+ * AutoDocs v0.1 - Fail-Open Telemetry Logger
  */
 const fs = require('node:fs');
 const path = require('node:path');
