@@ -1,0 +1,14 @@
+{
+  "id": "du_mock2",
+  "commitHash": "jkl3456789012",
+  "triggeredBy": "ci",
+  "docRef": { "type": "repo", "path": "docs/README.md" },
+  "strategy": "suggest",
+  "currentHash": "sha256:readme",
+  "suggestedHash": "sha256:readme2",
+  "diffFromCurrent": "--- current\n+++ suggested\n@@ -5,6 +5,7 @@\n Tracer agent.\n+\n+See docs/API.md for API details.\n",
+  "sectionsModified": [],
+  "provenance": { "model": "claude-sonnet-4-6", "provider": "anthropic", "timestamp": "2026-03-10T19:30:00Z", "inputTokens": 500, "outputTokens": 100, "estimatedCost": 0 },
+  "deliveryStatus": "pending",
+  "timestamp": "2026-03-10T19:30:00Z"
+}

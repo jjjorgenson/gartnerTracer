@@ -7,6 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { getTracerDir } = require('./delivery');
+const artifacts = require('./artifacts');
 
 function resolveArtifactPath(artifact) {
   if (!artifact || typeof artifact !== 'string') return null;
@@ -46,27 +47,45 @@ function acceptSuggestion(artifactPath) {
   const { id, targets, content } = loadSuggestion(artifactPath);
 
   for (const docPath of targets) {
-    const fullPath = path.isAbsolute(docPath) ? docPath : path.join(process.cwd(), docPath);
-    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-    fs.writeFileSync(fullPath, content, 'utf8');
-    console.log(`✅ Applied to ${docPath}`);
+    if (isWikiTarget(docPath)) {
+      const pageSlug = docPath.startsWith('wiki:') ? docPath.slice(5) : docPath;
+      const { GitHubWikiAdapter } = require('./adapters/github-wiki');
+      const adapter = new GitHubWikiAdapter();
+      const result = adapter.write(pageSlug, content, `Tracer: accepted suggestion ${id}`);
+      console.log(`\u2705 Wiki page "${pageSlug}" ${result.pushed ? 'pushed' : 'committed locally'}`);
+    } else {
+      const fullPath = path.isAbsolute(docPath) ? docPath : path.join(process.cwd(), docPath);
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      fs.writeFileSync(fullPath, content, 'utf8');
+      console.log(`\u2705 Applied to ${docPath}`);
+    }
   }
 
-  let statusData = { docs: {} };
+  // TRD §6: state, lastVerifiedCommit, contentHash, lastUpdated (top-level doc keys, optional repo)
+  let statusData = {};
   if (fs.existsSync(statusFile)) {
-    statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+    if (raw.repo !== undefined) statusData.repo = raw.repo;
+    const docEntries = raw.docs ? Object.entries(raw.docs) : Object.entries(raw).filter(([k]) => k !== 'repo');
+    docEntries.forEach(([k, v]) => { statusData[k] = v; });
   }
   const now = new Date().toISOString();
+  const contentHash = artifacts.contentHash(content);
   for (const doc of targets) {
-    statusData.docs[doc] = {
-      status: 'CURRENT',
-      lastSuggestionId: id,
-      lastAcceptedAt: now,
-      lastUpdated: now
+    const statusKey = isWikiTarget(doc) ? (doc.startsWith('wiki:') ? doc : `wiki:${doc}`) : doc;
+    statusData[statusKey] = {
+      state: 'current',
+      lastVerifiedCommit: '', // accept is manual; CI may set this on merge
+      contentHash,
+      lastUpdated: now,
     };
   }
   fs.writeFileSync(statusFile, JSON.stringify(statusData, null, 2), 'utf8');
-  console.log(`📝 doc-status.json updated: ${targets.length} doc(s) marked CURRENT`);
+  console.log(`\ud83d\udcdd doc-status.json updated: ${targets.length} doc(s) marked CURRENT`);
+}
+
+function isWikiTarget(docPath) {
+  return docPath.startsWith('wiki:') || docPath.match(/^[A-Z][\w-]+$/);
 }
 
 function rejectSuggestion(artifactPath) {
@@ -74,19 +93,22 @@ function rejectSuggestion(artifactPath) {
   const statusFile = path.join(tracerDir, 'doc-status.json');
   const { id, targets } = loadSuggestion(artifactPath);
 
-  let statusData = { docs: {} };
+  // TRD §6: keep existing keys, set state to pending on reject
+  let statusData = {};
   if (fs.existsSync(statusFile)) {
-    statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+    if (raw.repo !== undefined) statusData.repo = raw.repo;
+    const docEntries = raw.docs ? Object.entries(raw.docs) : Object.entries(raw).filter(([k]) => k !== 'repo');
+    docEntries.forEach(([k, v]) => { statusData[k] = v; });
   }
   const now = new Date().toISOString();
   for (const doc of targets) {
-    const existing = statusData.docs[doc] || {};
-    statusData.docs[doc] = {
+    const statusKey = isWikiTarget(doc) ? (doc.startsWith('wiki:') ? doc : `wiki:${doc}`) : doc;
+    const existing = statusData[statusKey] || {};
+    statusData[statusKey] = {
       ...existing,
-      status: 'PENDING',
-      lastRejectedSuggestionId: id,
-      lastRejectedAt: now,
-      lastUpdated: now
+      state: 'pending',
+      lastUpdated: now,
     };
   }
   fs.writeFileSync(statusFile, JSON.stringify(statusData, null, 2), 'utf8');

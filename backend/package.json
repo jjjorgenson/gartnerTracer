@@ -1,0 +1,16 @@
+{
+  "name": "tracer-backend",
+  "version": "1.0.0",
+  "description": "Tracer dashboard backend: GitHub App, webhook ingest, API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^5.0.0",
+    "@octokit/rest": "^20.0.2",
+    "cookie-session": "^2.1.0",
+    "express": "^4.21.0"
+  }
+}

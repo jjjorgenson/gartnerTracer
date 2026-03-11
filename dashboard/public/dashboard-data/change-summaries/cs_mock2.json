@@ -1,0 +1,21 @@
+{
+  "id": "cs_mock2",
+  "commitHash": "def5678901234",
+  "commitMessage": "Refactor auth module",
+  "author": "dev2",
+  "timestamp": "2026-03-10T18:30:00Z",
+  "filesChanged": 5,
+  "filesAdded": 0,
+  "filesModified": 5,
+  "filesDeleted": 0,
+  "docsAffected": [
+    { "docRef": { "type": "repo", "path": "docs/ARCHITECTURE.md" }, "status": "stale", "updateId": null }
+  ],
+  "docsUpdated": 0,
+  "docsSkipped": 1,
+  "provenance": { "model": "claude-sonnet-4-6", "provider": "anthropic", "timestamp": "2026-03-10T18:30:00Z", "inputTokens": 800, "outputTokens": 0, "estimatedCost": 0 },
+  "markdownBody": "",
+  "schemaVersion": 1,
+  "branch": "main",
+  "repo": "owner/gartnerTracer"
+}
