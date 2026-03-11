@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * TRACER v0.1 - Core CLI (agent | accept | reject)
+ * AutoDocs v0.1 - Core CLI (agent | accept | reject)
  * Agent: 14-step execution lifecycle. accept/reject: mark suggestion and update doc-status.
  */
 
@@ -53,7 +53,7 @@ if (command === 'hooks') {
     hooksStatus();
     process.exit(0);
   }
-  console.error('Usage: tracer hooks <install|status>');
+  console.error('Usage: autodocs hooks <install|status>');
   process.exit(2);
 }
 
@@ -150,7 +150,7 @@ async function runLifecycle() {
   let outputTokens = 0;
 
   try {
-    console.log("🚀 Starting Tracer Agent...");
+    console.log("🚀 Starting AutoDocs Agent...");
 
     // Step 2: Load manifest
     console.log(`📂 Loading manifest: ${args.values.manifest}`);
@@ -215,7 +215,7 @@ async function runLifecycle() {
     }
 
     // Step 7: Construct AI prompts
-    const systemPrompt = `You are Tracer, an AI documentation agent. Read the code diff and existing doc, and output ONLY the updated markdown. Keep the tone technical and concise.`;
+    const systemPrompt = `You are AutoDocs, an AI documentation agent. Read the code diff and existing doc, and output ONLY the updated markdown. Keep the tone technical and concise.`;
     const userPrompt = `Code diff:\n<diff>\n${diffString}\n</diff>\n\nCurrent documentation:\n<doc>\n${docContent}\n</doc>\n\nRewrite the documentation to accurately reflect the changes in the diff.`;
 
     // Step 8: Call AI provider with retries (1s, 4s, 16s on 429/5xx/timeout)
@@ -288,7 +288,7 @@ async function runLifecycle() {
       const docsAffected = [
         { docRef, status: 'updated', updateId: deliveryResult.docUpdateId },
       ];
-      const markdownBody = `## Tracer: doc update\n\nUpdated **${docPath}** (strategy: ${strategy}).\n\nCommit: ${commitContext.commitHash ? commitContext.commitHash.slice(0, 7) : 'n/a'}`;
+      const markdownBody = `## AutoDocs: doc update\n\nUpdated **${docPath}** (strategy: ${strategy}).\n\nCommit: ${commitContext.commitHash ? commitContext.commitHash.slice(0, 7) : 'n/a'}`;
       const summary = artifacts.buildChangeSummary({
         commitHash: commitContext.commitHash,
         commitMessage: gitContext.commitMessage,
@@ -315,7 +315,7 @@ async function runLifecycle() {
     logSpan({
       id: `span_${crypto.randomUUID()}`,
       timestamp: new Date().toISOString(),
-      tool: 'tracer-cli',
+      tool: 'autodocs-cli',
       eventType: 'doc_update_generation',
       model: 'claude-sonnet-4-6',
       inputTokens,
@@ -325,14 +325,14 @@ async function runLifecycle() {
     });
 
     // Step 14: Exit
-    console.log("\n✅ Tracer execution complete.");
+    console.log("\n✅ AutoDocs execution complete.");
     process.exit(0);
 
   } catch (err) {
     if (err.code === 'AI_PROVIDER_FAILURE') {
       if (process.env.GITHUB_TOKEN) {
         try {
-          await postPrComment('Tracer: doc update failed, manual review needed.');
+          await postPrComment('AutoDocs: doc update failed, manual review needed.');
         } catch (_) { /* ignore */ }
       }
       console.error(`💥 AI Provider Failure: ${err.message}`);

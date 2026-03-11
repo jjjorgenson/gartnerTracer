@@ -58,7 +58,7 @@ function get(url, accessToken) {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'Tracer-Backend',
+        'User-Agent': 'AutoDocs-Backend',
         'Authorization': 'Bearer ' + accessToken,
       },
     }, (res) => {

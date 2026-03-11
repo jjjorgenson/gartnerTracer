@@ -57,7 +57,7 @@ We plan to migrate this to token-based auth in Q3.
 async function callClaude(promptContext, strategyName) {
   console.log(`\n⏳ Running strategy: ${strategyName}...`);
   
-  const systemPrompt = `You are Tracer, an AI documentation agent. 
+  const systemPrompt = `You are AutoDocs, an AI documentation agent. 
 Your job is to read a code diff and an existing documentation snippet, and output ONLY the updated markdown for the documentation.
 Do not include pleasantries. Keep the tone technical and concise.`;
 
@@ -101,7 +101,7 @@ Please rewrite the documentation to accurately reflect the changes in the diff.`
 
 // --- EXECUTION ---
 async function runSpike() {
-  console.log("🚀 Starting Tracer Prompt Strategy Spike...");
+  console.log("🚀 Starting AutoDocs Prompt Strategy Spike...");
 
   // Run Strategy 1: Full Document
   const fullDocResult = await callClaude(mockFullDoc, "Full Document Context");

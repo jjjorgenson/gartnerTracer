@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - ChangeSummary and DocUpdate artifact emission (TRD §3.2, §3.3)
+ * AutoDocs v0.1 - ChangeSummary and DocUpdate artifact emission (TRD §3.2, §3.3)
  * Writes to .tracer/change-summaries/ and .tracer/doc-updates/ for dashboard consumption.
  */
 

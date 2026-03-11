@@ -1,4 +1,4 @@
-# Tracer v0.1
+# AutoDocs v0.1
 
 CLI and CI agent that detects code changes affecting documentation, generates suggested doc updates via an AI provider, and delivers them (suggest artifact, or PR comment). No hosted backend required.
 
@@ -92,7 +92,7 @@ Rejected outputs are appended to `.tracer/spans-rejected.jsonl` with reason and 
 
 - The agent retries the Anthropic call **3 times** with exponential backoff (1s, 4s, 16s) on 429, 5xx, or timeout.
 - **Exit codes:** `0` success, `1` runtime failure, `2` config/manifest/argument error, `3` AI provider failure after retries, `9` no matched docs.
-- On AI failure in CI, Tracer posts a PR comment: *"Tracer: doc update failed, manual review needed."* and exits with code 3.
+- On AI failure in CI, AutoDocs posts a PR comment: *"AutoDocs: doc update failed, manual review needed."* and exits with code 3.
 
 ## Artifacts
 
@@ -110,7 +110,7 @@ Use the included workflow:
 
 - **Trigger:** Pull requests to `main`
 - **Steps:** Checkout, Node 20, install deps, run `node cli.js -m tracer.manifest.yaml -d pr.diff`, upload `.tracer/`
-- **Fail-open:** Tracer failures do not block the PR (`continue-on-error: true`)
+- **Fail-open:** AutoDocs failures do not block the PR (`continue-on-error: true`)
 
 Ensure the repo has `ANTHROPIC_API_KEY` in Actions secrets. `GITHUB_TOKEN` is provided automatically for pr-comment delivery.
 

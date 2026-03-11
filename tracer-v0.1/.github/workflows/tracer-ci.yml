@@ -1,11 +1,11 @@
-name: Tracer AI Doc Agent
+name: AutoDocs AI Doc Agent
 
 on:
   pull_request:
     branches: [ main ]
 
 jobs:
-  tracer-doc-check:
+  autodocs-doc-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -18,21 +18,21 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Tracer Dependencies
+      - name: Install AutoDocs Dependencies
         run: npm install js-yaml minimatch
 
-      - name: Run Tracer CLI
+      - name: Run AutoDocs CLI
         env:
           TRACER_PROVIDER_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           mkdir -p .tracer
           git diff origin/${{ github.base_ref }}...HEAD > pr.diff
           node cli.js -m tracer.manifest.yaml -d pr.diff
-        continue-on-error: true # Fail-Open policy: Don't block the PR if Tracer fails
+        continue-on-error: true # Fail-Open policy: Don't block the PR if AutoDocs fails
 
-      - name: Upload Tracer Artifacts
+      - name: Upload AutoDocs Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tracer-artifacts
+          name: autodocs-artifacts
           path: .tracer/
           retention-days: 14

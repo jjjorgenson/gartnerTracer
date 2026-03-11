@@ -1,7 +1,7 @@
 {
-  "name": "tracer-backend",
+  "name": "autodocs-backend",
   "version": "1.0.0",
-  "description": "Tracer dashboard backend: GitHub App, webhook ingest, API",
+  "description": "AutoDocs dashboard backend: GitHub App, webhook ingest, API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

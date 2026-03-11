@@ -28,7 +28,7 @@ class GitHubWikiAdapter {
     }
 
     this.token = opts.token || process.env.GITHUB_TOKEN;
-    this.authorName = opts.authorName || 'Tracer Agent';
+    this.authorName = opts.authorName || 'AutoDocs Agent';
     this.authorEmail = opts.authorEmail || 'tracer@noreply.dev';
 
     this.cacheDir = opts.cacheDir
@@ -205,7 +205,7 @@ class GitHubWikiAdapter {
    * @param {string} [message]
    * @returns {{ committed: boolean, pushed: boolean }}
    */
-  writeSidebar(content, message = 'Tracer: update sidebar navigation') {
+  writeSidebar(content, message = 'AutoDocs: update sidebar navigation') {
     this.ensureClone();
     const filePath = path.join(this.cacheDir, '_Sidebar.md');
     fs.writeFileSync(filePath, content, 'utf8');

@@ -1,5 +1,5 @@
 /**
- * TRACER v0.1 - tracer sync (TRD Epic 4.4).
+ * AutoDocs v0.1 - sync command (TRD Epic 4.4).
  * POST spans.jsonl (or recent lines) to dashboard ingest endpoint.
  */
 const fs = require('node:fs');
