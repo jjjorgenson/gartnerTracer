@@ -5,9 +5,19 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const crypto = require('node:crypto');
 const { createPatch } = require('diff');
-const { getTracerDir } = require('./delivery');
+
+function getTracerDir() {
+  if (process.env.TRACER_OUTPUT_DIR) {
+    return path.resolve(process.cwd(), process.env.TRACER_OUTPUT_DIR);
+  }
+  if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+    return path.join(process.cwd(), '.tracer');
+  }
+  return path.join(os.homedir(), '.tracer');
+}
 
 function generateId(prefix) {
   const t = Date.now().toString(36);

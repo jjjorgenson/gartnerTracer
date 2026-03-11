@@ -1,0 +1,16 @@
+{
+  "id": "du_mock1",
+  "commitHash": "abc1234567890",
+  "triggeredBy": "ci",
+  "docRef": { "type": "repo", "path": "docs/API.md" },
+  "strategy": "pr-comment",
+  "currentHash": "sha256:old",
+  "suggestedHash": "sha256:new",
+  "diffFromCurrent": "--- current\n+++ suggested\n@@ -1,3 +1,4 @@\n # API\n+\n+## Rate limiting\n+Added in v2.\n",
+  "sectionsModified": ["API"],
+  "provenance": { "model": "claude-sonnet-4-6", "provider": "anthropic", "timestamp": "2026-03-10T20:00:00Z", "inputTokens": 1000, "outputTokens": 200, "estimatedCost": 0 },
+  "deliveryStatus": "delivered",
+  "deliveryRef": "https://github.com/owner/gartnerTracer/pull/42#issuecomment-1",
+  "deliveredAt": "2026-03-10T20:00:05Z",
+  "timestamp": "2026-03-10T20:00:00Z"
+}

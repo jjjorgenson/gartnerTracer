@@ -1,0 +1,22 @@
+{
+  "id": "cs_mock1",
+  "commitHash": "abc1234567890",
+  "commitMessage": "Add rate limiting to API",
+  "author": "dev1",
+  "timestamp": "2026-03-10T20:00:00Z",
+  "filesChanged": 3,
+  "filesAdded": 1,
+  "filesModified": 2,
+  "filesDeleted": 0,
+  "docsAffected": [
+    { "docRef": { "type": "repo", "path": "docs/API.md" }, "status": "updated", "updateId": "du_mock1" }
+  ],
+  "docsUpdated": 1,
+  "docsSkipped": 0,
+  "provenance": { "model": "claude-sonnet-4-6", "provider": "anthropic", "timestamp": "2026-03-10T20:00:00Z", "inputTokens": 1000, "outputTokens": 200, "estimatedCost": 0 },
+  "markdownBody": "## Tracer: doc update\n\nUpdated docs/API.md.",
+  "schemaVersion": 1,
+  "prNumber": "42",
+  "branch": "main",
+  "repo": "owner/gartnerTracer"
+}

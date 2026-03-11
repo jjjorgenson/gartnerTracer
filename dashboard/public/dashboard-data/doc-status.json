@@ -1,0 +1,23 @@
+{
+  "repo": "owner/gartnerTracer",
+  "branch": "main",
+  "docs/API.md": {
+    "state": "current",
+    "lastVerifiedCommit": "abc1234",
+    "contentHash": "sha256:abc",
+    "lastUpdated": "2026-03-10T20:00:00Z"
+  },
+  "docs/ARCHITECTURE.md": {
+    "state": "stale",
+    "lastVerifiedCommit": "def5678",
+    "contentHash": "sha256:def",
+    "lastUpdated": "2026-03-09T14:00:00Z",
+    "staleReason": "src/api/main.ts changed in commit ghi9012"
+  },
+  "docs/README.md": {
+    "state": "pending",
+    "lastVerifiedCommit": "jkl3456",
+    "contentHash": "sha256:jkl",
+    "lastUpdated": "2026-03-10T19:30:00Z"
+  }
+}

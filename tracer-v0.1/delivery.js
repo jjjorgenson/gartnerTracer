@@ -1,12 +1,14 @@
 /**
  * TRACER v0.1 - Delivery Adapter (suggest | pr-comment | commit)
  * The commit strategy routes github-wiki docs through the WikiAdapter.
+ * Writes DocUpdate artifacts (TRD §3.2) and updates doc-status (TRD §6).
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const os = require('node:os');
 const { postPrComment } = require('./github');
+const artifacts = require('./artifacts');
 
 function getTracerDir() {
   if (process.env.TRACER_OUTPUT_DIR) {
@@ -38,16 +40,29 @@ function writeSuggestArtifact(matchedDocs, aiGeneratedMarkdown, suggestionId) {
   console.log(`✅ [Delivery] Suggestion artifact written to: ${filePath}`);
 }
 
-function updateDocStatus(matchedDocs, suggestionId) {
-  let statusData = { docs: {} };
+/**
+ * Update doc-status.json (TRD §6): state, lastVerifiedCommit, contentHash, lastUpdated; top-level repo.
+ * @param {string[]} matchedDocs - doc keys (path or wiki:Page-Slug)
+ * @param {object} opts - { commitHash, contentHash (current doc hash), repo }
+ */
+function updateDocStatus(matchedDocs, opts = {}) {
+  let statusData = {};
   if (fs.existsSync(STATUS_FILE)) {
-    statusData = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
+    // Support legacy { docs: { path: {...} } } and TRD top-level path keys
+    if (raw.repo !== undefined) statusData.repo = raw.repo;
+    const docEntries = raw.docs ? Object.entries(raw.docs) : Object.entries(raw).filter(([k]) => k !== 'repo');
+    docEntries.forEach(([k, v]) => { statusData[k] = v; });
   }
+  if (opts.repo !== undefined) statusData.repo = opts.repo;
+  const now = new Date().toISOString();
   matchedDocs.forEach(doc => {
-    statusData.docs[doc] = {
-      status: 'PENDING',
-      lastUpdated: new Date().toISOString(),
-      lastSuggestionId: suggestionId
+    statusData[doc] = {
+      state: 'pending',
+      lastVerifiedCommit: opts.commitHash || '',
+      contentHash: opts.contentHash || '',
+      lastUpdated: now,
+      ...(opts.staleReason && { staleReason: opts.staleReason }),
     };
   });
   fs.writeFileSync(STATUS_FILE, JSON.stringify(statusData, null, 2), 'utf8');
@@ -87,14 +102,58 @@ async function deliverToWiki(pageSlug, content, context = {}) {
 }
 
 /**
+ * Build and write one DocUpdate; update doc-status (TRD §6). Returns docUpdateId and delivery outcome.
  * @param {string[]} matchedDocs
  * @param {string} aiGeneratedMarkdown
+ * @param {string} docPath - primary doc path for this update
+ * @param {string} docContent - current doc content (for currentHash and diff)
  * @param {string} [strategy='suggest']
- * @param {object} [opts] - { docTypeByDoc: Map, commitContext: { commitHash, prNumber, repo } }
+ * @param {object} [opts] - { docTypeByDoc: Map, commitContext: { commitHash, prNumber, repo }, provenance: { model, provider, inputTokens, outputTokens } }
+ * @returns {Promise<{ docUpdateId: string, deliveryFailed: boolean, deliveryRef?: string }>}
  */
-async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, strategy = 'suggest', opts = {}) {
+async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, docPath, docContent, strategy = 'suggest', opts = {}) {
   const suggestionId = `update_${crypto.randomUUID()}`;
-  const { docTypeByDoc, commitContext } = opts;
+  const { docTypeByDoc, commitContext, provenance: prov } = opts;
+  const ctx = commitContext || {};
+  const currentHash = artifacts.contentHash(docContent);
+  const suggestedHash = artifacts.contentHash(aiGeneratedMarkdown);
+  const diffFromCurrent = artifacts.createUnifiedDiff(docPath, docContent, aiGeneratedMarkdown);
+  const docRef = { type: docTypeByDoc?.get(docPath) === 'github-wiki' ? 'repo' : 'repo', path: docPath };
+  const now = new Date().toISOString();
+  const provenance = {
+    model: prov?.model || 'claude-sonnet-4-6',
+    provider: prov?.provider || 'anthropic',
+    timestamp: now,
+    inputTokens: prov?.inputTokens ?? 0,
+    outputTokens: prov?.outputTokens ?? 0,
+    estimatedCost: 0,
+    promptHash: prov?.promptHash || '',
+  };
+  const statusOpts = { commitHash: ctx.commitHash || '', contentHash: currentHash, repo: ctx.repo };
+
+  /** Status keys for doc-status.json: repo path or wiki:Page-Slug */
+  const statusKeysFor = (docs) => (docTypeByDoc ? docs.map(d => docTypeByDoc.get(d) === 'github-wiki' ? `wiki:${d}` : d) : docs);
+
+  const writeDocUpdateAndStatus = (deliveryStatus, deliveryRef, deliveredAt, statusKeys) => {
+    const keys = statusKeys || matchedDocs;
+    const docUpdate = artifacts.buildDocUpdate({
+      commitHash: ctx.commitHash,
+      docRef,
+      strategy,
+      currentHash,
+      suggestedContent: aiGeneratedMarkdown,
+      suggestedHash,
+      diffFromCurrent,
+      provenance,
+      deliveryStatus,
+      deliveryRef,
+      deliveredAt,
+      timestamp: now,
+    });
+    const docUpdateId = artifacts.writeDocUpdate(docUpdate);
+    updateDocStatus(statusKeysFor(Array.isArray(keys) ? keys : [keys]), statusOpts);
+    return docUpdateId;
+  };
 
   // Commit strategy for github-wiki docs: push directly to wiki repo
   if (strategy === 'commit' && docTypeByDoc) {
@@ -103,19 +162,24 @@ async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, strategy = 's
 
     for (const pageSlug of wikiDocs) {
       try {
-        await deliverToWiki(pageSlug, aiGeneratedMarkdown, commitContext || {});
-        updateDocStatus([`wiki:${pageSlug}`], suggestionId);
-      } catch {
+        await deliverToWiki(pageSlug, aiGeneratedMarkdown, ctx);
         writeSuggestArtifact([pageSlug], aiGeneratedMarkdown, suggestionId);
-        updateDocStatus([pageSlug], suggestionId);
+        const docUpdateId = writeDocUpdateAndStatus('delivered', undefined, now, [pageSlug]);
+        if (repoDocs.length === 0) return { docUpdateId, deliveryFailed: false };
+      } catch (_) {
+        writeSuggestArtifact([pageSlug], aiGeneratedMarkdown, suggestionId);
+        const docUpdateId = writeDocUpdateAndStatus('failed', undefined, undefined, [pageSlug]);
+        return { docUpdateId, deliveryFailed: true };
       }
     }
 
     if (repoDocs.length > 0) {
       writeSuggestArtifact(repoDocs, aiGeneratedMarkdown, suggestionId);
-      updateDocStatus(repoDocs, suggestionId);
+      const docUpdateId = writeDocUpdateAndStatus('pending', undefined, undefined, repoDocs);
+      return { docUpdateId, deliveryFailed: false };
     }
-    return;
+    const docUpdateId = writeDocUpdateAndStatus('pending', undefined, undefined, matchedDocs);
+    return { docUpdateId, deliveryFailed: false };
   }
 
   try {
@@ -124,8 +188,8 @@ async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, strategy = 's
       const commentUrl = await postPrComment(body);
       console.log(`\u2705 [Delivery] PR comment posted: ${commentUrl}`);
       writeSuggestArtifact(matchedDocs, aiGeneratedMarkdown, suggestionId);
-      updateDocStatus(matchedDocs, suggestionId);
-      return;
+      const docUpdateId = writeDocUpdateAndStatus('delivered', commentUrl, now);
+      return { docUpdateId, deliveryFailed: false, deliveryRef: commentUrl };
     }
   } catch (err) {
     console.warn(`\u26a0\ufe0f [Delivery] pr-comment failed (${err.message}), falling back to suggest`);
@@ -133,11 +197,12 @@ async function deliverSuggestion(matchedDocs, aiGeneratedMarkdown, strategy = 's
 
   try {
     writeSuggestArtifact(matchedDocs, aiGeneratedMarkdown, suggestionId);
-    updateDocStatus(matchedDocs, suggestionId);
+    const docUpdateId = writeDocUpdateAndStatus('pending', undefined, undefined);
+    return { docUpdateId, deliveryFailed: false };
   } catch (err) {
     console.error(`\ud83d\udca5 Delivery Failure: ${err.message}`);
     throw err;
   }
 }
 
-module.exports = { deliverSuggestion, deliverToWiki, getTracerDir };
+module.exports = { deliverSuggestion, deliverToWiki, getTracerDir, updateDocStatus };

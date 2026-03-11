@@ -10,7 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "diff": "^5.2.0",
     "js-yaml": "^4.1.1",
-    "minimatch": "^10.2.4"
+    "minimatch": "^10.2.4",
+    "ulid": "^2.3.0"
   }
 }

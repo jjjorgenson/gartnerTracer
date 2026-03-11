@@ -26,7 +26,7 @@ describe('deliverSuggestion', () => {
 
   it('delivers via suggest strategy (default)', async () => {
     const { deliverSuggestion } = require('../delivery');
-    await deliverSuggestion(['docs/test.md'], '# Updated\n', 'suggest');
+    await deliverSuggestion(['docs/test.md'], '# Updated\n', 'docs/test.md', '', 'suggest');
 
     const suggestionsDir = path.join(tmpDir, 'suggestions');
     assert.ok(fs.existsSync(suggestionsDir), 'suggestions dir should exist');
@@ -41,17 +41,17 @@ describe('deliverSuggestion', () => {
     const statusFile = path.join(tmpDir, 'doc-status.json');
     assert.ok(fs.existsSync(statusFile));
     const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
-    assert.strictEqual(status.docs['docs/test.md'].status, 'PENDING');
+    assert.strictEqual(status['docs/test.md'].state, 'pending');
   });
 
   it('commit strategy with repo docs falls back to suggest', async () => {
     const { deliverSuggestion } = require('../delivery');
     const docTypeByDoc = new Map([['docs/repo-doc.md', 'repo']]);
-    await deliverSuggestion(['docs/repo-doc.md'], '# Repo\n', 'commit', { docTypeByDoc });
+    await deliverSuggestion(['docs/repo-doc.md'], '# Repo\n', 'docs/repo-doc.md', '', 'commit', { docTypeByDoc });
 
     const statusFile = path.join(tmpDir, 'doc-status.json');
     const status = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
-    assert.strictEqual(status.docs['docs/repo-doc.md'].status, 'PENDING');
+    assert.strictEqual(status['docs/repo-doc.md'].state, 'pending');
   });
 });
 
