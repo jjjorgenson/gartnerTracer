@@ -42,12 +42,33 @@ export interface ApiRepo {
   installationId?: string
 }
 
+export interface ApiAvailableRepo extends ApiRepo {
+  connected: boolean
+  hasData: boolean
+}
+
 export async function getRepos(): Promise<ApiRepo[]> {
   if (!hasApi()) return []
   const r = await fetchWithAuth('/api/repos')
   if (r.status === 401) return []
   if (!r.ok) return []
   return (await r.json()) as ApiRepo[]
+}
+
+export async function getAvailableRepos(): Promise<ApiAvailableRepo[]> {
+  if (!hasApi()) return []
+  const r = await fetchWithAuth('/api/repos/available')
+  if (r.status === 401) return []
+  if (!r.ok) return []
+  return (await r.json()) as ApiAvailableRepo[]
+}
+
+export async function connectRepo(repo: string): Promise<boolean> {
+  const r = await fetchWithAuth('/api/repos/connect', {
+    method: 'POST',
+    body: JSON.stringify({ repo }),
+  })
+  return r.ok
 }
 
 export interface RepoDataResponse {
@@ -82,9 +103,14 @@ export function getLoginUrl(): string {
   return base() + '/api/auth/login'
 }
 
-export function getInstallUrl(state: string): string {
-  const s = encodeURIComponent(state)
-  return base() + '/api/auth/install?state=' + s
+export function getRepoAccessUrl(
+  state: string,
+  installationId?: string,
+  mode: 'manage' | 'install' = 'manage'
+): string {
+  const params = new URLSearchParams({ state, mode })
+  if (installationId) params.set('installation_id', installationId)
+  return base() + '/api/auth/install?' + params.toString()
 }
 
 export function getLogoutUrl(): string {

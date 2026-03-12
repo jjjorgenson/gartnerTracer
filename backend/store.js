@@ -103,32 +103,98 @@ function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
 }
 
+function ensureUser(users, githubId, login) {
+  const id = String(githubId);
+  if (!users[id]) users[id] = { login: login || null, repos: [], availableRepos: [], installationIds: [] };
+  if (!Array.isArray(users[id].repos)) users[id].repos = [];
+  if (!Array.isArray(users[id].availableRepos)) users[id].availableRepos = [];
+  if (!Array.isArray(users[id].installationIds)) users[id].installationIds = [];
+  users[id].login = login || users[id].login || null;
+  return users[id];
+}
+
+function normalizeRepoRecord(repoLike) {
+  const repo = repoLike.full_name || repoLike.repo || (repoLike.owner && repoLike.name ? repoLike.owner.login + '/' + repoLike.name : null);
+  if (!repo) return null;
+  return {
+    repo: repo,
+    repoUrl: repoLike.html_url || repoLike.repoUrl || ('https://github.com/' + repo),
+    installationId: repoLike.installationId || null,
+  };
+}
+
+function mergeRepoRecords(existingRecords, reposToMerge) {
+  const byRepo = new Map();
+  for (let i = 0; i < existingRecords.length; i++) {
+    const record = normalizeRepoRecord(existingRecords[i]);
+    if (record) byRepo.set(record.repo, record);
+  }
+  for (let i = 0; i < reposToMerge.length; i++) {
+    const record = normalizeRepoRecord(reposToMerge[i]);
+    if (!record) continue;
+    const existing = byRepo.get(record.repo);
+    byRepo.set(record.repo, {
+      ...(existing || {}),
+      ...record,
+    });
+  }
+  return Array.from(byRepo.values()).sort(function (a, b) {
+    return a.repo.localeCompare(b.repo);
+  });
+}
+
 function getReposForUser(githubId) {
   const users = getUsers();
   const u = users[String(githubId)];
   return (u && u.repos) ? u.repos : [];
 }
 
-function addReposForUser(githubId, login, reposToAdd) {
+function getAvailableReposForUser(githubId) {
   const users = getUsers();
-  const id = String(githubId);
-  if (!users[id]) users[id] = { login, repos: [] };
-  const existing = new Set(users[id].repos.map(function (r) { return r.repo; }));
-  for (let i = 0; i < reposToAdd.length; i++) {
-    const r = reposToAdd[i];
-    const repo = r.full_name || r.repo || (r.owner && r.name ? r.owner.login + '/' + r.name : null);
-    if (repo && !existing.has(repo)) {
-      existing.add(repo);
-      users[id].repos.push({
-        repo: repo,
-        repoUrl: r.html_url || ('https://github.com/' + repo),
-        installationId: r.installationId,
-      });
+  const u = users[String(githubId)];
+  return (u && u.availableRepos) ? u.availableRepos : [];
+}
+
+function getInstallationIdsForUser(githubId) {
+  const users = getUsers();
+  const u = users[String(githubId)];
+  return (u && u.installationIds) ? u.installationIds : [];
+}
+
+function addInstallationIdForUser(githubId, login, installationId) {
+  if (!installationId) return [];
+  const users = getUsers();
+  const user = ensureUser(users, githubId, login);
+  const normalized = String(installationId);
+  if (!user.installationIds.includes(normalized)) {
+    user.installationIds.push(normalized);
+    user.installationIds.sort();
+    saveUsers(users);
+  }
+  return user.installationIds;
+}
+
+function saveAvailableReposForUser(githubId, login, reposToAdd) {
+  const users = getUsers();
+  const user = ensureUser(users, githubId, login);
+  user.availableRepos = mergeRepoRecords([], reposToAdd);
+  for (let i = 0; i < user.availableRepos.length; i++) {
+    const installationId = user.availableRepos[i].installationId;
+    if (installationId && !user.installationIds.includes(installationId)) {
+      user.installationIds.push(installationId);
     }
   }
-  users[id].login = login || users[id].login;
+  user.installationIds.sort();
   saveUsers(users);
-  return users[id].repos;
+  return user.availableRepos;
+}
+
+function addReposForUser(githubId, login, reposToAdd) {
+  const users = getUsers();
+  const user = ensureUser(users, githubId, login);
+  user.repos = mergeRepoRecords(user.repos, reposToAdd);
+  saveUsers(users);
+  return user.repos;
 }
 
 function removeRepoForUser(githubId, owner, repo) {
@@ -140,4 +206,19 @@ function removeRepoForUser(githubId, owner, repo) {
   saveUsers(users);
 }
 
-module.exports = { getRepos, getReposForUser, addRepo, addReposForUser, removeRepoForUser, repoDataDir, writeRepoData, ensureDir, fetchUrl, DATA_DIR };
+module.exports = {
+  getRepos,
+  getReposForUser,
+  getAvailableReposForUser,
+  getInstallationIdsForUser,
+  addRepo,
+  addReposForUser,
+  addInstallationIdForUser,
+  saveAvailableReposForUser,
+  removeRepoForUser,
+  repoDataDir,
+  writeRepoData,
+  ensureDir,
+  fetchUrl,
+  DATA_DIR,
+};
