@@ -1,0 +1,16 @@
+{
+  "id": "du_mock3",
+  "commitHash": "fed9876543210",
+  "triggeredBy": "ci",
+  "docRef": { "type": "repo", "path": "docs/API.md" },
+  "strategy": "pr-comment",
+  "currentHash": "sha256:api_v2",
+  "suggestedHash": "sha256:api_v3",
+  "diffFromCurrent": "--- current\n+++ suggested\n@@ -10,6 +10,12 @@\n ## Rate limiting\n Added in v2.\n \n+## Token expiry\n+\n+Tokens expire after 24 hours. Clients should handle 401\n+responses by refreshing via `/auth/refresh`.\n+\n+See also: [Auth Flow](wiki:Auth-Flow)\n",
+  "sectionsModified": ["Rate limiting", "Token expiry"],
+  "provenance": { "model": "claude-sonnet-4-6", "provider": "anthropic", "timestamp": "2026-03-10T15:10:00Z", "inputTokens": 1400, "outputTokens": 350, "estimatedCost": 0.02 },
+  "deliveryStatus": "accepted",
+  "deliveryRef": "https://github.com/owner/gartnerTracer/pull/39#issuecomment-5",
+  "deliveredAt": "2026-03-10T15:12:00Z",
+  "timestamp": "2026-03-10T15:10:00Z"
+}

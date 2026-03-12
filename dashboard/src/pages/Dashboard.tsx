@@ -149,7 +149,7 @@ export function Dashboard() {
                 >
                   <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.type === 'summary' ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-text-subtle)]'}`} />
                   <span className="min-w-0 flex-1 truncate text-sm">{item.label}</span>
-                  <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)]">
+                  <span className="shrink-0 font-mono text-[11px] text-[var(--color-text-subtle)]">
                     {item.sub}
                   </span>
                   <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">

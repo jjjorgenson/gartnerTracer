@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={to}
                   to={to}
                   onClick={onClose}
-                  className={`group flex min-h-[40px] items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`group flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
                       : 'text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)]'

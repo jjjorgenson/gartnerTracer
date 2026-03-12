@@ -116,14 +116,14 @@ export function Docs() {
                 <span className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--color-text)]">
                   {path.startsWith('wiki:') ? `wiki/${path.replace(/^wiki:/, '')}` : path}
                 </span>
-                <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)]">
+                <span className="shrink-0 font-mono text-[11px] text-[var(--color-text-subtle)]">
                   {entry.lastVerifiedCommit ? entry.lastVerifiedCommit.slice(0, 7) : '—'}
                 </span>
                 <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">
                   {entry.lastUpdated ? formatRelativeTime(entry.lastUpdated) : '—'}
                 </span>
                 {entry.state === 'stale' && entry.staleReason && (
-                  <span className="text-[10px] text-[var(--color-warning)]" title={entry.staleReason}>
+                  <span className="text-[11px] text-[var(--color-warning)]" title={entry.staleReason}>
                     {entry.staleReason.slice(0, 50)}…
                   </span>
                 )}
@@ -155,8 +155,9 @@ function StateBadge({ state }: { state: string }) {
   }
   return (
     <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${styles[state] ?? 'bg-[var(--color-border)] text-[var(--color-text-subtle)]'}`}
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${styles[state] ?? 'bg-[var(--color-border)] text-[var(--color-text-subtle)]'}`}
       role="status"
+      aria-label={`Status: ${state}`}
     >
       {state}
     </span>

@@ -69,7 +69,7 @@ export function Timeline() {
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="text-xs text-[var(--color-text-subtle)]">{s.author}</span>
                     <span className="text-xs text-[var(--color-text-subtle)]">{formatRelativeTime(s.timestamp)}</span>
-                    {s.branch && <span className="font-mono text-[10px] text-[var(--color-text-subtle)]">{s.branch}</span>}
+                    {s.branch && <span className="font-mono text-[11px] text-[var(--color-text-subtle)]">{s.branch}</span>}
                     {s.prNumber && <span className="text-xs text-[var(--color-text-subtle)]">PR #{s.prNumber}</span>}
                   </div>
                   <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--color-text-subtle)]">
@@ -79,7 +79,7 @@ export function Timeline() {
                   {s.docsAffected?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {s.docsAffected.map((d, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-text-subtle)]">
+                        <span key={i} className="inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-2 py-0.5 font-mono text-[11px] text-[var(--color-text-subtle)]">
                           {d.docRef?.path ?? 'doc'}
                           <StatusDot status={d.status} />
                         </span>
@@ -87,7 +87,7 @@ export function Timeline() {
                     </div>
                   )}
                 </div>
-                <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)]">{s.commitHash?.slice(0, 7)}</span>
+                <span className="shrink-0 font-mono text-[11px] text-[var(--color-text-subtle)]">{s.commitHash?.slice(0, 7)}</span>
               </div>
             </Link>
           ))}
@@ -126,7 +126,7 @@ function StatusDot({ status }: { status: string }) {
     status === 'updated' || status === 'delivered' ? 'bg-[var(--color-success)]'
     : status === 'skipped' ? 'bg-[var(--color-text-subtle)]'
     : 'bg-[var(--color-warning)]'
-  return <span className={`inline-block h-1.5 w-1.5 rounded-full ${color}`} title={status} />
+  return <span className={`inline-block h-1.5 w-1.5 rounded-full ${color}`} title={status} aria-hidden="true" />
 }
 
 function AlertBanner({ messages }: { messages: string[] }) {

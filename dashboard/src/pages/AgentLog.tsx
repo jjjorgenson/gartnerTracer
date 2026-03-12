@@ -88,19 +88,38 @@ export function AgentLog() {
         <div className="divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
           {pageItems.map((u) => (
             <div key={u.id} className="first:rounded-t-lg last:rounded-b-lg">
-              <button
-                type="button"
-                onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
-                className="flex w-full items-center gap-3 px-5 py-3.5 text-left hover:bg-[var(--color-border)]/50 transition-colors"
-              >
-                <StatusDot status={u.deliveryStatus} />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text)]">{u.docRef?.path ?? u.id}</span>
-                <StatusBadge status={u.deliveryStatus} />
-                <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">{formatRelativeTime(u.timestamp)}</span>
+              <div className="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--color-border)]/50 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
+                  className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 text-left"
+                  aria-expanded={expandedId === u.id}
+                >
+                  <StatusDot status={u.deliveryStatus} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text)]">{u.docRef?.path ?? u.id}</span>
+                  <StatusBadge status={u.deliveryStatus} />
+                  <span className="shrink-0 text-xs text-[var(--color-text-subtle)]">{formatRelativeTime(u.timestamp)}</span>
+                  {(u.provenance?.estimatedCost ?? 0) > 0 && (
+                    <span className="shrink-0 font-mono text-[11px] text-[var(--color-text-subtle)]">
+                      ${u.provenance!.estimatedCost.toFixed(2)}
+                    </span>
+                  )}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className={`shrink-0 text-[var(--color-text-subtle)] transition-transform ${expandedId === u.id ? 'rotate-180' : ''}`}
+                    aria-hidden
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
                 <Link
                   to={`/timeline/commit/${u.commitHash}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)] hover:text-[var(--color-accent)]"
+                  className="shrink-0 font-mono text-[11px] text-[var(--color-text-subtle)] hover:text-[var(--color-accent)]"
                 >
                   {u.commitHash?.slice(0, 7)}
                 </Link>
@@ -109,30 +128,12 @@ export function AgentLog() {
                     href={u.deliveryRef}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
                     className="shrink-0 text-xs text-[var(--color-accent)] hover:underline"
                   >
                     View
                   </a>
                 )}
-                {(u.provenance?.estimatedCost ?? 0) > 0 && (
-                  <span className="shrink-0 font-mono text-[10px] text-[var(--color-text-subtle)]">
-                    ${u.provenance!.estimatedCost.toFixed(2)}
-                  </span>
-                )}
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className={`shrink-0 text-[var(--color-text-subtle)] transition-transform ${expandedId === u.id ? 'rotate-180' : ''}`}
-                  aria-hidden
-                >
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
+              </div>
               {expandedId === u.id && (
                 <div className="border-t border-[var(--color-border)] bg-[var(--color-bg)] px-5 py-4">
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--color-text-subtle)]">
@@ -191,6 +192,7 @@ function StatusDot({ status }: { status: string }) {
       className={`inline-block h-2 w-2 shrink-0 rounded-full ${
         ok ? 'bg-[var(--color-success)]' : fail ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-text-subtle)]'
       }`}
+      aria-hidden="true"
     />
   )
 }
@@ -200,7 +202,7 @@ function StatusBadge({ status }: { status: string }) {
   const fail = ['failed', 'rejected'].includes(status)
   return (
     <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
         ok ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
         : fail ? 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
         : 'bg-[var(--color-border)] text-[var(--color-text-subtle)]'
