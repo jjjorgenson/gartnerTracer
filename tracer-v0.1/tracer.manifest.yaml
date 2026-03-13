@@ -1,8 +1,17 @@
-version: "0.1"
+# Standalone manifest for working inside tracer-v0.1/ directly.
+# The repo-root manifest lives at ../tracer.manifest.yaml.
+
+version: 1
+
 mappings:
-  - path: "src/**/*.js"
+  - code:
+      paths:
+        - "*.js"
+        - "adapters/**/*.js"
+        - ".github/workflows/*.yml"
     docs:
-      - "docs/architecture.md"
-  - path: "database/schema.sql"
-    docs:
-      - "docs/database.md"
+      - path: "README.md"
+        type: repo
+      - path: "docs/architecture.md"
+        type: repo
+    strategy: suggest

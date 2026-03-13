@@ -121,7 +121,7 @@ function StatusDot({ status }: { status: string }) {
   const ok = ['delivered', 'accepted'].includes(status)
   const fail = ['failed', 'rejected'].includes(status)
   return (
-    <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${ok ? 'bg-[var(--color-success)]' : fail ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-text-subtle)]'}`} />
+    <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${ok ? 'bg-[var(--color-success)]' : fail ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-text-subtle)]'}`} aria-hidden="true" />
   )
 }
 
@@ -130,7 +130,7 @@ function StatusBadge({ status }: { status: string }) {
   const fail = ['failed', 'rejected'].includes(status)
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
+      className={`rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
         ok ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
         : fail ? 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
         : 'bg-[var(--color-border)] text-[var(--color-text-subtle)]'

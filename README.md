@@ -9,7 +9,7 @@
 - **Doc update agent** — On commit or PR, reads your diff and a code→doc manifest, calls an AI provider to suggest doc updates, and delivers them (PR comment, commit to branch, or wiki) for human review.
 - **Change summaries** — Each run produces a structured summary: what changed, which docs were affected, provenance (model, cost), and a markdown narrative.
 - **AI usage collection** — Hooks for Cursor, Claude Code, and OpenClaw write usage spans to a local log; `tracer report` and the dashboard show token/cost breakdowns.
-- **Dashboard** — Read-only web UI: timeline of changes, agent log, doc status, and (with optional backend) connect repos via GitHub, switch repos, and manage connected repos.
+- **Dashboard** — Read-only web UI: timeline of changes, agent log, doc status, and (with optional backend) sign in with GitHub, pick app-accessible repos to connect, switch repos, and manage connected repos.
 
 ---
 
@@ -18,7 +18,7 @@
 1. **Manifest** — A `tracer.manifest.yaml` (or `.yaml`) maps code globs to doc targets (repo files or GitHub Wiki). Each mapping can use strategy `suggest`, `pr-comment`, or `commit`.
 2. **Trigger** — Run the agent locally (`tracer agent`) or in CI (e.g. GitHub Action). The agent uses the diff (or `--diff`, `--since`), resolves affected docs from the manifest, calls the AI provider, and writes a suggested update plus a change summary and doc-update artifact under `.tracer/`.
 3. **Delivery** — Depending on strategy, the suggestion is written to `.tracer/suggestions/`, posted as a PR comment, or committed to the branch. You **accept** or **reject** via `tracer accept` / `tracer reject` (updates doc-status and optionally the doc or wiki).
-4. **Dashboard** — Static build reads JSON from `dashboard-data/` (or from an optional backend when `VITE_API_BASE` is set). CI can copy `.tracer/` into `dashboard-data/` and build the dashboard; with the backend, you log in with GitHub, connect repos via the GitHub App, and view data from the API.
+4. **Dashboard** — Static build reads JSON from `dashboard-data/` (or from an optional backend when `VITE_API_BASE` is set). CI can copy `.tracer/` into `dashboard-data/` and build the dashboard; with the backend, you log in with GitHub, grant the GitHub App access to repos, select which repo to connect in-app, and view data from the API.
 
 ---
 
@@ -122,18 +122,102 @@ For GitHub login and repo-backed dashboard data:
 
 ```bash
 cd backend && npm install
-# Set env: GITHUB_APP_ID, GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY (or OAuth client),
-# SESSION_SECRET, DASHBOARD_ORIGIN (e.g. http://localhost:5174)
-node server.js
+cp .env.example .env
+# Fill in the GitHub OAuth App + GitHub App values in backend/.env
+npm start
 ```
 
-Dashboard: set `VITE_API_BASE=http://localhost:3002` (or your backend URL), then run the dashboard dev server; use “Log in with GitHub” and “Connect Repo” to add repos.
+The backend loads `backend/.env` automatically. For local dev:
+
+- Create a GitHub OAuth App for login.
+- Create a GitHub App for repo connect/install.
+- Set `VITE_API_BASE=http://localhost:3002` in `dashboard/.env`.
+- Start the backend on `:3002`, then run the dashboard dev server.
+
+End-user connect flow in API mode:
+
+1. Sign in with GitHub.
+2. Click `Connect` in the dashboard header.
+3. If the repo is not already available, use `Add repo access` to update the GitHub App installation on GitHub.
+4. Return to the dashboard and choose a single repo from the in-app picker.
+
+The dashboard now keeps two separate concepts:
+
+- **App-accessible repos**: repos the GitHub App installation can access.
+- **Connected repos**: repos the current user has explicitly added to their dashboard view.
+
+This means the app no longer auto-connects every repo visible to a GitHub App installation.
+
+Use `backend/.env.example` for the full variable list.
+
+### 8.1 GitHub setup (developer/operator one-time)
+
+End users do **not** create GitHub apps or set env vars. This is the deployer/operator setup.
+
+**OAuth App**
+
+- Application name: `AutoDocs-gartnerTracer`
+- Homepage URL: `http://localhost:5174`
+- Authorization callback URL: `http://localhost:3002/api/auth/callback`
+
+**GitHub App**
+
+- GitHub App name: `AutoDocs-gartnerTracer`
+- Homepage URL: `http://localhost:5174`
+- Setup URL: `http://localhost:3002/api/auth/app-callback`
+- Install scope: `Only on this account` for local/dev
+- Permissions: `Contents: Read-only`, `Metadata: Read-only`
+
+Fill these backend vars after app creation:
+
+- `GITHUB_OAUTH_CLIENT_ID`
+- `GITHUB_OAUTH_CLIENT_SECRET`
+- `GITHUB_APP_ID`
+- `GITHUB_APP_CLIENT_ID`
+- `GITHUB_APP_PRIVATE_KEY`
+- `GITHUB_APP_SLUG`
+- `SESSION_SECRET`
+- `DASHBOARD_ORIGIN`
+
+### 8.2 Backend deploy
+
+For production, deploy `backend/` to any Node-capable host. The included `backend/Dockerfile` works on most container platforms.
+
+```bash
+cd backend
+docker build -t autodocs-backend .
+docker run --rm -p 3002:3002 --env-file .env autodocs-backend
+```
+
+Production checklist:
+
+- Set `DASHBOARD_ORIGIN` to the deployed dashboard URL
+- Set `API_BASE` to the public backend URL
+- Update the OAuth callback URL to `https://<backend-host>/api/auth/callback`
+- Update the GitHub App Setup URL to `https://<backend-host>/api/auth/app-callback`
+- Set `VITE_API_BASE` in the dashboard build to the public backend URL
+- Optionally set `WEBHOOK_SHARED_SECRET` to protect `POST /webhook/ingest`
 
 ---
 
 ## CI (GitHub Actions)
 
-The repo includes `.github/workflows/dashboard.yml`: on push to `main`, it optionally prepares dashboard data from `.tracer`, builds the dashboard, and uploads the artifact for GitHub Pages. Enable Pages in repo Settings → Pages → “GitHub Actions”. To run the agent in CI, add a step that runs `node tracer-v0.1/cli.js agent` with the right manifest and env (e.g. `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`).
+The repo includes `.github/workflows/dashboard.yml`: on push to `main`, it optionally prepares dashboard data from `.tracer`, can POST those artifacts to the backend when `AUTODOCS_INGEST_URL` is configured, builds the dashboard, and uploads the artifact for GitHub Pages.
+
+Enable Pages in repo Settings → Pages → “GitHub Actions”.
+
+To run the agent in CI, add a step that runs `node tracer-v0.1/cli.js agent` with the right manifest and env (e.g. `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`).
+
+To push `.tracer/` artifacts to the backend after a run:
+
+```bash
+node scripts/post-tracer-ingest.mjs \
+  --source tracer-v0.1/.tracer \
+  --repo owner/repo \
+  --url https://your-backend.example.com
+```
+
+The script auto-posts to `/webhook/ingest` and includes the optional `AUTODOCS_WEBHOOK_SECRET` header when that env var is present.
 
 ---
 

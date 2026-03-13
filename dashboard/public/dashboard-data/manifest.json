@@ -1,10 +1,14 @@
 {
   "changeSummaryIds": [
     "cs_mock1",
-    "cs_mock2"
+    "cs_mock2",
+    "cs_mock3",
+    "cs_mock4"
   ],
   "docUpdateIds": [
     "du_mock1",
-    "du_mock2"
+    "du_mock2",
+    "du_mock3",
+    "du_mock4"
   ]
 }

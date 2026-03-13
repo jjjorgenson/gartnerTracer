@@ -1,0 +1,23 @@
+{
+  "id": "cs_mock3",
+  "commitHash": "fed9876543210",
+  "commitMessage": "Fix authentication edge case for expired tokens",
+  "author": "dev1",
+  "timestamp": "2026-03-10T15:10:00Z",
+  "filesChanged": 2,
+  "filesAdded": 0,
+  "filesModified": 2,
+  "filesDeleted": 0,
+  "docsAffected": [
+    { "docRef": { "type": "repo", "path": "docs/API.md" }, "status": "updated", "updateId": "du_mock3" },
+    { "docRef": { "type": "wiki", "path": "wiki:Auth-Flow" }, "status": "skipped", "updateId": null }
+  ],
+  "docsUpdated": 1,
+  "docsSkipped": 1,
+  "provenance": { "model": "claude-sonnet-4-6", "provider": "anthropic", "timestamp": "2026-03-10T15:10:00Z", "inputTokens": 1400, "outputTokens": 350, "estimatedCost": 0.02 },
+  "markdownBody": "## AutoDocs: doc update\n\nUpdated docs/API.md with token expiry details. Skipped wiki:Auth-Flow (unchanged).",
+  "schemaVersion": 1,
+  "prNumber": "39",
+  "branch": "fix/auth-edge-case",
+  "repo": "owner/gartnerTracer"
+}

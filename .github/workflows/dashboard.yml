@@ -12,6 +12,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+
       - name: Prepare dashboard data
         run: |
           if [ -d tracer-v0.1/.tracer ]; then
@@ -20,12 +27,21 @@ jobs:
             echo "No .tracer found; using existing dashboard-data (e.g. mock)"
           fi
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: dashboard/package-lock.json
+      - name: Push .tracer data to backend
+        env:
+          AUTODOCS_INGEST_URL: ${{ secrets.AUTODOCS_INGEST_URL }}
+          AUTODOCS_WEBHOOK_SECRET: ${{ secrets.AUTODOCS_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$AUTODOCS_INGEST_URL" ]; then
+            echo "AUTODOCS_INGEST_URL not set; skipping backend ingest"
+          elif [ ! -d tracer-v0.1/.tracer ]; then
+            echo "No .tracer found; skipping backend ingest"
+          else
+            node scripts/post-tracer-ingest.mjs \
+              --source tracer-v0.1/.tracer \
+              --repo "${{ github.repository }}" \
+              --url "$AUTODOCS_INGEST_URL"
+          fi
 
       - name: Build dashboard
         run: |

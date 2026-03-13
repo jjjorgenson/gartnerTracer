@@ -8,7 +8,7 @@
   --color-border-subtle: #28282f;
   --color-text: #e8e8ed;
   --color-text-muted: #8b8b96;
-  --color-text-subtle: #56565f;
+  --color-text-subtle: #7a7a85;
   --color-accent: #06b6d4;
   --color-accent-hover: #22d3ee;
   --color-on-accent: #050508;
@@ -97,10 +97,10 @@ select {
 }
 
 .micro-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-subtle);
+  color: var(--color-text-muted);
   font-family: var(--font-body);
 }

@@ -1,0 +1,82 @@
+# Canonical AutoDocs manifest for the gartnerTracer repo.
+# Run the agent from the repo root so these doc paths resolve correctly.
+# Put the most specific doc first in each mapping: v0.1 currently updates
+# the first matched documentation target per run.
+
+version: 1
+
+mappings:
+  - code:
+      paths:
+        - "tracer-v0.1/*.js"
+        - "tracer-v0.1/adapters/**/*.js"
+        - "tracer-v0.1/.github/workflows/*.yml"
+    docs:
+      - path: "tracer-v0.1/README.md"
+        type: repo
+      - path: "docs/TRD.md"
+        type: repo
+      - path: "README.md"
+        type: repo
+    strategy: suggest
+
+  - code:
+      paths:
+        - "dashboard/src/pages/**/*.tsx"
+        - "dashboard/src/components/**/*.tsx"
+        - "dashboard/src/App.tsx"
+        - "dashboard/src/main.tsx"
+        - "dashboard/src/index.css"
+        - "dashboard/index.html"
+    docs:
+      - path: "docs/AutoDocs-UI-Reference.md"
+        type: repo
+      - path: "docs/Dashboard-Plan.md"
+        type: repo
+    strategy: suggest
+
+  - code:
+      paths:
+        - "dashboard/src/context/**/*.tsx"
+        - "dashboard/src/data/**/*.ts"
+        - "dashboard/src/utils/**/*.ts"
+        - "dashboard/scripts/**/*.mjs"
+        - "dashboard/package.json"
+    docs:
+      - path: "docs/dashboard-data-contract.md"
+        type: repo
+      - path: "docs/Dashboard-Plan.md"
+        type: repo
+    strategy: suggest
+
+  - code:
+      paths:
+        - "backend/*.js"
+        - "backend/package.json"
+        - "backend/.env.example"
+        - "backend/Dockerfile"
+        - "backend/.dockerignore"
+        - "scripts/post-tracer-ingest.mjs"
+        - ".github/workflows/dashboard.yml"
+    docs:
+      - path: "docs/dashboard-data-contract.md"
+        type: repo
+      - path: "docs/Dashboard-Plan.md"
+        type: repo
+    strategy: suggest
+
+  - code:
+      paths:
+        - "README.md"
+        - "dashboard/README.md"
+        - "tracer-v0.1/README.md"
+        - "backend/.env.example"
+        - "backend/Dockerfile"
+        - "backend/.dockerignore"
+        - "scripts/post-tracer-ingest.mjs"
+        - ".github/workflows/dashboard.yml"
+        - "tracer.manifest.yaml"
+    docs:
+      - path: "README.md"
+        type: repo
+    strategy: suggest
