@@ -150,6 +150,10 @@ app.get('/api/repos/available', requireAuth, async (req, res) => {
       .map(function (installationId) { return String(installationId); })
   ));
 
+  if (installationIds.length === 0) {
+    console.log('Available repos: no installation IDs for user', req.session.user.id, '- user must complete "Manage existing access" from dashboard and be redirected from GitHub to app-callback');
+  }
+
   if (installationIds.length > 0 && GITHUB_APP_ID && GITHUB_APP_PRIVATE_KEY) {
     let refreshFailed = false;
     let liveAvailableRepos = [];
@@ -224,7 +228,7 @@ app.get('/api/repos/:owner/:repo/data', requireAuth, (req, res) => {
   }
   const dir = store.repoDataDir(fullRepo);
   if (!dir || !fs.existsSync(dir)) {
-    return res.status(404).json({ error: 'No data for this repo' });
+    return res.json({ manifest: { changeSummaryIds: [], docUpdateIds: [] }, docStatus: {} });
   }
   const manifestPath = path.join(dir, 'manifest.json');
   const statusPath = path.join(dir, 'doc-status.json');
@@ -324,6 +328,7 @@ app.get('/api/auth/app-callback', async (req, res) => {
   const installationId = req.query.installation_id;
   const githubId = resolveInstallGithubId(req);
   if (!installationId || !githubId) {
+    console.log('App callback missing_params: installation_id=' + (installationId ? 'present' : 'MISSING') + ', githubId=' + (githubId ? githubId : 'MISSING') + ', query.state=' + (req.query.state || '') + ', session.pending=' + (req.session?.pendingInstallGithubId || '') + ', session.user=' + (req.session?.user?.id || ''));
     return res.redirect(DASHBOARD_ORIGIN + '?connected=0&error=missing_params');
   }
   if (req.session?.pendingInstallGithubId) {
@@ -372,6 +377,7 @@ const PORT = process.env.PORT || 3002;
 function startServer(port = PORT) {
   return app.listen(port, () => {
     console.log(`AutoDocs backend listening on port ${port}`);
+    console.log('DASHBOARD_ORIGIN=', DASHBOARD_ORIGIN);
   });
 }
 

@@ -29,6 +29,7 @@ export function Layout() {
   const [loadingAvailableRepos, setLoadingAvailableRepos] = useState(false)
   const [availableReposError, setAvailableReposError] = useState<string | null>(null)
   const [connectingRepo, setConnectingRepo] = useState<string | null>(null)
+  const [disconnectingRepo, setDisconnectingRepo] = useState<string | null>(null)
   const [banner, setBanner] = useState<string | null>(null)
   const repoDropdownRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -349,6 +350,7 @@ export function Layout() {
           loading={loadingAvailableRepos}
           error={availableReposError}
           connectingRepo={connectingRepo}
+          disconnectingRepo={disconnectingRepo}
           repoAccessUrl={repoAccessUrl}
           repoAccessLabel={repoAccessLabel}
           repoAccessHelpText={repoAccessHelpText}
@@ -359,6 +361,21 @@ export function Layout() {
           }}
           onConnect={(repo) => {
             void handleConnectRepo(repo)
+          }}
+          onDisconnect={async (fullRepo) => {
+            const [owner, repo] = fullRepo.split('/')
+            if (!owner || !repo) return
+            setDisconnectingRepo(fullRepo)
+            try {
+              const ok = await disconnectRepo(owner, repo)
+              if (ok) {
+                await refetchRepos()
+                await loadAvailableRepos()
+                setBanner('Repository disconnected.')
+              }
+            } finally {
+              setDisconnectingRepo(null)
+            }
           }}
         />
       )}
@@ -403,6 +420,7 @@ function ConnectRepoModal({
   loading,
   error,
   connectingRepo,
+  disconnectingRepo,
   repoAccessUrl,
   repoAccessLabel,
   repoAccessHelpText,
@@ -410,11 +428,13 @@ function ConnectRepoModal({
   onClose,
   onRefresh,
   onConnect,
+  onDisconnect,
 }: {
   repos: ApiAvailableRepo[]
   loading: boolean
   error: string | null
   connectingRepo: string | null
+  disconnectingRepo: string | null
   repoAccessUrl: string
   repoAccessLabel: string
   repoAccessHelpText: string
@@ -422,6 +442,7 @@ function ConnectRepoModal({
   onClose: () => void
   onRefresh: () => void
   onConnect: (repo: string) => void
+  onDisconnect: (fullRepo: string) => void | Promise<void>
 }) {
   const closeRef = useRef<HTMLButtonElement>(null)
 
@@ -528,18 +549,27 @@ function ConnectRepoModal({
                         )}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onConnect(repo.repo)}
-                      disabled={repo.connected || connectingRepo === repo.repo}
-                      className={`inline-flex min-h-[44px] min-w-[108px] items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                        repo.connected
-                          ? 'cursor-default border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[var(--color-text-subtle)]'
-                          : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
-                      } disabled:opacity-60`}
-                    >
-                      {connectingRepo === repo.repo ? 'Connecting...' : repo.connected ? 'Connected' : 'Connect'}
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {repo.connected ? (
+                        <button
+                          type="button"
+                          onClick={() => void onDisconnect(repo.repo)}
+                          disabled={disconnectingRepo === repo.repo}
+                          className="inline-flex min-h-[44px] min-w-[100px] items-center justify-center rounded-lg border border-[var(--color-danger)]/50 px-3 py-2 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 disabled:opacity-50"
+                        >
+                          {disconnectingRepo === repo.repo ? 'Disconnecting...' : 'Disconnect'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onConnect(repo.repo)}
+                          disabled={connectingRepo === repo.repo}
+                          className="inline-flex min-h-[44px] min-w-[108px] items-center justify-center rounded-lg bg-[var(--color-accent)] px-3 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+                        >
+                          {connectingRepo === repo.repo ? 'Connecting...' : 'Connect'}
+                        </button>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>

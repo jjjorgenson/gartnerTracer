@@ -1,8 +1,9 @@
 import { useDashboardDataContext } from '../context/DashboardDataContext'
 
 export function Settings() {
-  const { docStatus } = useDashboardDataContext()
-  const repo = (docStatus.repo as string) || ''
+  const { docStatus, selectedRepo } = useDashboardDataContext()
+  // Prefer connected repo (API mode); fall back to doc-status repo (static/mock)
+  const repo = selectedRepo || (docStatus.repo as string) || ''
 
   return (
     <div className="space-y-8">
