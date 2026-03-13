@@ -31,12 +31,15 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '10mb' }));
+// When dashboard is on a different origin (e.g. Vercel + Railway), cookie must be sameSite: 'none'
+// so the browser sends it on cross-origin API requests. sameSite: 'none' requires secure: true.
+const isCrossOrigin = DASHBOARD_ORIGIN !== 'http://localhost:5174';
 app.use(cookieSession({
   name: 'autodocs_session',
   secret: SESSION_SECRET,
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  sameSite: isCrossOrigin ? 'none' : 'lax',
+  secure: isCrossOrigin || process.env.NODE_ENV === 'production',
 }));
 
 function requireAuth(req, res, next) {
