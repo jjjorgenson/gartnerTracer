@@ -1,0 +1,45 @@
+# Example: add this workflow to a *connected* repo so each push
+# (or manual run) sends tracer data to the AutoDocs backend.
+#
+# 1. Copy this file to that repo as .github/workflows/ingest-autodocs.yml
+# 2. In that repo, add secrets: AUTODOCS_INGEST_URL, AUTODOCS_WEBHOOK_SECRET
+# 3. Source: below uses gartnerTracer MOCK data. For LIVE data see docs/how-to-live-tracer-data.md
+
+name: Ingest to AutoDocs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Checkout gartnerTracer (script + mock data)
+        uses: actions/checkout@v4
+        with:
+          repository: jjjorgenson/gartnerTracer
+          path: gartnerTracer
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Push tracer data to backend
+        env:
+          AUTODOCS_INGEST_URL: ${{ secrets.AUTODOCS_INGEST_URL }}
+          AUTODOCS_WEBHOOK_SECRET: ${{ secrets.AUTODOCS_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$AUTODOCS_INGEST_URL" ]; then
+            echo "AUTODOCS_INGEST_URL not set; skipping ingest"
+            exit 0
+          fi
+          node gartnerTracer/scripts/post-tracer-ingest.mjs \
+            --source gartnerTracer/dashboard/public/dashboard-data \
+            --repo "${{ github.repository }}" \
+            --url "$AUTODOCS_INGEST_URL"

@@ -142,7 +142,15 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       return
     }
     const urlRepo = searchParams.get('repo')
-    const effective = urlRepo || (repos.length > 0 ? repos[0].repo : null)
+    const repoList = repos.map((r) => r.repo)
+    // Only use URL repo if it's still in the connected list (avoids 403 after disconnect)
+    const effective =
+      (urlRepo && repoList.includes(urlRepo) ? urlRepo : null) ||
+      (repos.length > 0 ? repos[0].repo : null)
+    // Sync URL when stale (e.g. after disconnect so we don't keep ?repo=disconnected/repo)
+    if (urlRepo && urlRepo !== effective) {
+      setSearchParams(effective ? { repo: effective } : {})
+    }
     if (!user) {
       if (apiError) {
         setState((s) => ({ ...s, loading: false, docStatus: {}, changeSummaries: [], docUpdates: [], loadErrors: [] }))
@@ -170,7 +178,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         loading: false,
       }))
     })
-  }, [hasApi(), user?.id, selectedRepoFromUrl, repos.length, apiError])
+  }, [hasApi(), user?.id, selectedRepoFromUrl, repos, apiError, setSearchParams])
 
   useEffect(() => {
     const handler = () => refresh()

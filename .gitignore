@@ -4,3 +4,8 @@ node_modules/
 *.log
 .DS_Store
 *.private-key.pem
+
+# Backend runtime data (created on first login / app install)
+backend/data/users.json
+backend/data/repos.json
+backend/data/*/

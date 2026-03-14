@@ -2,6 +2,8 @@
 
 **AI-powered documentation agent and audit trail.** AutoDocs automatically generates documentation updates and structured change summaries from code diffs and AI pipeline output — reducing manual doc work and making AI workflows auditable.
 
+**Default dashboard:** [https://gartner-tracer.vercel.app/](https://gartner-tracer.vercel.app/)
+
 ---
 
 ## What it does
@@ -218,6 +220,20 @@ node scripts/post-tracer-ingest.mjs \
 ```
 
 The script auto-posts to `/webhook/ingest` and includes the optional `AUTODOCS_WEBHOOK_SECRET` header when that env var is present.
+
+### Continuous auto-docing (any connected repo)
+
+To have a **connected repo** (e.g. [instinct8](https://github.com/jjjorgenson/instinct8)) push tracer data to the backend on every push (or on demand):
+
+1. **In that repo**, add two GitHub Actions secrets (Settings → Secrets and variables → Actions):
+   - **`AUTODOCS_INGEST_URL`** = your backend base URL, e.g. `https://gartnertracer-production.up.railway.app`
+   - **`AUTODOCS_WEBHOOK_SECRET`** = same value as `WEBHOOK_SHARED_SECRET` on the backend
+
+2. **Add a workflow** that runs the ingest script. Two options:
+   - **Use gartnerTracer’s script and (for testing) mock data:** checkout gartnerTracer and run `post-tracer-ingest.mjs` with `--source dashboard/public/dashboard-data` and `--repo owner/repo`. See [docs/example-ingest-workflow.yml](docs/example-ingest-workflow.yml) for a copy-paste workflow.
+   - **Use real tracer output:** run the tracer agent in that repo (or in a repo that has it), write `.tracer/` (or equivalent), then run the same script with `--source path/to/.tracer` and `--repo owner/repo`. See [docs/how-to-live-tracer-data.md](docs/how-to-live-tracer-data.md) for step-by-step (manifest, diff, CI, secrets).
+
+3. Trigger the workflow on **push to main** and/or **workflow_dispatch** so each push (or manual run) updates the dashboard for that repo.
 
 ---
 
